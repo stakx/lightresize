@@ -29,7 +29,9 @@ namespace Imazen.LightResize {
     /// </summary>
     public class SinglePurposeResize {
         /// <summary>
-        /// Less efficient than LightResize, and cannot resize files in place. 
+        /// Less efficient than LightResize, and cannot resize files in place. Caller MUST ensure the first stream is disposed if the first stream fails to open. 
+        /// 
+        /// I.e, place first stream in using(){} clause, and open the second stream inside it before calling Resize()
         /// </summary>
         /// <param name="s"></param>
         /// <param name="target"></param>
