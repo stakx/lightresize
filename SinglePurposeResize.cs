@@ -1,18 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
+﻿/*
+ * Copyright (c) 2012 Imazen 
+ * 
+ * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not designed for use within an ASP.NET application.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, 
+ * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+ * THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Text;
-
-// Goal: 
-// Smallest implementation of Stream->different Stream resizing for jpeg only, max bounds resizing only, streams auto-disposed.
-// 30-45% Performance sacrifices were made to render implementation more concise.
-// 
-
 
 namespace Imazen.LightResize {
+    /// <summary>
+    /// This implementation of image resizing sacrifices 30-50% performance for simplicty. 
+    /// It only supports max-constraints resizing, jpeg encoding, and stream->stream processing.
+    /// </summary>
     public class SinglePurposeResize {
         /// <summary>
         /// Less efficient than LightResize, and cannot resize files in place. 
@@ -24,6 +38,7 @@ namespace Imazen.LightResize {
         /// <param name="jpegQuality"></param>
         public static void Resize(Stream s, Stream target, int? maxwidth, int? maxheight, int jpegQuality = 90)
         {
+            //Ensure source bitmap, source stream, and target stream are disposed in that order.
             using (target)
             using (s)
             using (var b = new Bitmap(s,true))
@@ -40,6 +55,7 @@ namespace Imazen.LightResize {
                 {
                     w = orig.Width;
                     h = orig.Height;
+                    //No change? Render-as-is...
                     RenderAndEncode(b, orig, target, jpegQuality);
                     return;
                 }
@@ -63,8 +79,13 @@ namespace Imazen.LightResize {
         }
 
         /// <summary>
-        /// All rendering occurs here; 
+        /// Resizes the provided bitmap to the given target size and writes it to the target stream with jpeg encoding.
+        /// Warning: Does NOT dispose the source bitmap, source stream, or target stream! 
         /// </summary>
+        /// <param name="b">The source bitmap</param>
+        /// <param name="targetSize">The target size</param>
+        /// <param name="target">The target stream</param>
+        /// <param name="jpegQuality">The target quality</param>
         private static void RenderAndEncode(Bitmap b, Size targetSize, Stream target, int jpegQuality)
         {
             //Validate quality

@@ -1,29 +1,26 @@
-﻿using System;
+﻿/*
+ * Copyright (c) 2012 Imazen 
+ * 
+ * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not designed for use within an ASP.NET application.
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
+ * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, 
+ * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+ * THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
-
-/*
- * Goal: Make the shortest possible implementation of image resizing that:
- * 1) Does not introduce visual artifacts or sacrifice quality
- * 2) Does not leak or waste any memory
- * 3) Does not have rounding or mathematical errors
- * 4) Can go from filename->filename, stream->stream, stream->filename, filename->stream, and filename->same filename
- * 5) Encodes optimally to jpeg and reliably to PNG.
- * 6) Offers 4 constraint modes: max, pad, crop, and stretch (Only adds 30 lines of code)
- * 7) Offers upscaling prevention options
- * 
- * What I had to sacrifice:
- * 
- * ASP.NET support, 
- * Crop/padding alignment selection, manual cropping, source rotate/final rotate, flipping, 
- * 
- * All GIF support, 8-bit PNG support, automatic output format selection based on input format, 
- * all file extension and mime-type logic, 
- * 
- * 
- */
 
 namespace Imazen.LightResize
 {
@@ -60,16 +57,37 @@ namespace Imazen.LightResize
         BufferEntireSourceStream
     }
     /// <summary>
-    /// Encapsulates a resizing operation.
+    /// Encapsulates a resizing operation. Very limited compared to ImageResizer, absolutely no ASP.NET support.
     /// </summary>
     public class ResizeJob {
 
+        /// <summary>
+        /// The width constraint
+        /// </summary>
         public int? Width { get; set; }
+        /// <summary>
+        /// The height constraint
+        /// </summary>
         public int? Height { get; set; }
+        /// <summary>
+        /// The constraint mode. Defaults to Max
+        /// </summary>
         public FitMode Mode { get; set; }
+        /// <summary>
+        /// Should upscaling be permitted? Defaults to downscaling only.
+        /// </summary>
         public ScaleMode ScalingRules { get; set; }
+        /// <summary>
+        /// The encoding format to use when writing the result to stream. Defaults to jpeg.
+        /// </summary>
         public OutputFormat Format { get; set; }
+        /// <summary>
+        /// The jpeg encoding quality to use. '90' is the best value and the default. Seriously.
+        /// </summary>
         public int JpegQuality { get; set; }
+        /// <summary>
+        /// The background color to apply (null for transparency) White will be used if the encoding format is Jpeg and this is unspecified.
+        /// </summary>
         public Color? Matte { get; set; }
         /// <summary>
         /// If true, the ICC profile will be ignored instead of being applied
@@ -84,7 +102,12 @@ namespace Imazen.LightResize
             IgnoreIccProfile = false;
             Format = OutputFormat.Jpg;
         }
-        
+        /// <summary>
+        /// Resizes from one filename to another
+        /// </summary>
+        /// <param name="sourcePath"></param>
+        /// <param name="destPath"></param>
+        /// <param name="options"></param>
         public void Build (string sourcePath, string destPath, JobOptions options)
         {
             if (sourcePath == destPath)
@@ -92,13 +115,23 @@ namespace Imazen.LightResize
 
             Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destPath, options);
         }
-
+        /// <summary>
+        /// Reads from filename, writes to stream
+        /// </summary>
+        /// <param name="sourcePath"></param>
+        /// <param name="target"></param>
+        /// <param name="options"></param>
         public void Build(string sourcePath, Stream target, JobOptions options) {
             
             Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), target, options);
         }
 
-
+        /// <summary>
+        /// Reads from Stream s and writes to the given physical path
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="destPath"></param>
+        /// <param name="options"></param>
         public void Build(Stream s, string destPath, JobOptions options) {
 
             var createParents = ((options & JobOptions.CreateParentDirectory) != 0);
@@ -117,7 +150,12 @@ namespace Imazen.LightResize
                   }, options);
         }
 
-
+        /// <summary>
+        /// Resizes from one stream to another
+        /// </summary>
+        /// <param name="s"></param>
+        /// <param name="target"></param>
+        /// <param name="options"></param>
         public void Build(Stream s, Stream target, JobOptions options)
         {
             Build(s, delegate(Bitmap b, JobOptions opts)
@@ -136,7 +174,11 @@ namespace Imazen.LightResize
                          }, options);
 
         }
-
+        /// <summary>
+        /// Allows callers to handle the encoding/usage phase.
+        /// </summary>
+        /// <param name="b"></param>
+        /// <param name="options"></param>
         protected delegate void BitmapConsumer(Bitmap b, JobOptions options);
 
         /// <summary>
@@ -159,7 +201,7 @@ namespace Imazen.LightResize
                 try
                 {
                     //Buffer source stream if requested
-                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(s) : s;
+                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(s,false,0x1000) : s;
 
                     //Allow early disposal (enables same-file edits)
                     if (bufferSource && !leaveSourceStreamOpen)
@@ -183,10 +225,10 @@ namespace Imazen.LightResize
                     {
                         //Dispose loaded bitmap instance
                         if (Source != null) Source.Dispose();
-                        Source = null;
                     }
                     finally
                     {
+                        Source = null; //Ensure reference is null
                         try
                         {
                             //Dispose buffer
@@ -194,6 +236,7 @@ namespace Imazen.LightResize
                         }
                         finally
                         {
+                            UnderlyingStream = null; //Ensure reference is null
                             //Dispose source stream or restore its position
                             if (!leaveSourceStreamOpen && s != null) s.Dispose();
                             else if (originalPosition > -1 && s != null && s.CanSeek) s.Position = originalPosition;
@@ -530,27 +573,6 @@ namespace Imazen.LightResize
     {
 
         /// <summary>
-        /// Copies the remaining data in the current stream to a new MemoryStream instance.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <returns></returns>
-        public static MemoryStream CopyToMemoryStream(Stream s)
-        {
-            return CopyToMemoryStream(s, false);
-        }
-
-        /// <summary>
-        /// Copies the current stream into a new MemoryStream instance.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="entireStream">True to copy entire stream if seeakable, false to only copy remaining data</param>
-        /// <returns></returns>
-        public static MemoryStream CopyToMemoryStream(Stream s, bool entireStream)
-        {
-            return CopyToMemoryStream(s, entireStream, 0x1000);
-        }
-
-        /// <summary>
         /// Copies the current stream into a new MemoryStream instance.
         /// </summary>
         /// <param name="s"></param>
@@ -565,31 +587,6 @@ namespace Imazen.LightResize
             ms.Position = 0;
             return ms;
         }
-
-        /// <summary>
-        /// Copies the remaining data from the this stream into the given stream.
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="other">The stream to write to</param>
-        public static void CopyToStream(Stream s, Stream other)
-        {
-            CopyToStream(s, other, false);
-        }
-
-        /// <summary>
-        /// Copies this stream into the given stream
-        /// </summary>
-        /// <param name="s"></param>
-        /// <param name="other">The stream to write to</param>
-        /// <param name="entireStream">True to copy entire stream if seeakable, false to only copy remaining data</param>
-        public static void CopyToStream(Stream s, Stream other, bool entireStream)
-        {
-            CopyToStream(s, other, entireStream, 0x1000);
-        }
-
-
-
-
 
         /// <summary>
         /// Copies this stream into the given stream
@@ -687,7 +684,7 @@ namespace Imazen.LightResize
         Canvas
     }
     /// <summary>
-    /// Controls the encoding format
+    /// Controls the encoding format. Auto-detection is not enabled.
     /// </summary>
     public enum OutputFormat {
         Jpg, 

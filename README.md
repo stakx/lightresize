@@ -17,17 +17,20 @@ Embeddable image resizing class for console, WPF, &amp; WinForms usage.
 2. 8-bit PNG support
 3. Cropping, rotation, flipping, zoom, dpi, and alignment control.
 4. ASP.NET support. Virtual paths, VirtualPathProviders, HttpPostedFile, and automatic format inference are gone. 
-5. No UrlAuthorization support, no file security, no cache headers, no mime-type detection, no size limits.
-5. All friendly error messages. Back to the uninformative ArgumentException and ExternalException errors.
-6. No disk caching (A safe implementation of this requires 5-10KLOC).
-7. No file extension or mime-type intelligence.
+5. Locked file management.
+5. UrlAuthorization support, file security, cache headers, mime-type detection, size limits.
+5. Friendly error messages. Back to the uninformative GDI+ ArgumentException and ExternalException errors.
+6. Disk caching (A safe implementation of this requires 5-10KLOC).
+7. File extension and mime-type intelligence.
 8. Margins, padding, and border support.
 9. Safe Template paths (i.e., `~/images/<guid>.<ext>`)
 10. Direct Bitmap/Image access
 11. Extensibility. No plugins, no events, no flexible command interface.
-12. No self-diagnostics or configuration. 
+12. Self-diagnostics and configuration. 
 
+The result is < 700 LOC, which is ideal for limited needs embedded usage scenarios like command-line or WinForms apps. 
 
+It's definitely a poor choice for ASP.NET usage, though - you're better off using http://imageresizing.net/ 
 
 ## Goal 2: Make a single-purpose implementation of image resizing that:
 
