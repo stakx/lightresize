@@ -27,6 +27,9 @@ using System.IO;
 
 namespace Imazen.LightResize
 {
+    /// <summary>
+    /// Allows you to customize how IO is handled
+    /// </summary>
     [Flags]
     public enum JobOptions
     {
@@ -68,6 +71,9 @@ namespace Imazen.LightResize
         public OutputFormat Format { get; set; }
         public int JpegQuality { get; set; }
         public Color? Matte { get; set; }
+        /// <summary>
+        /// If true, the ICC profile will be ignored instead of being applied
+        /// </summary>
         public bool IgnoreIccProfile { get; set; }
 
         public ResizeJob()

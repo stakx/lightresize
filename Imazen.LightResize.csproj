@@ -8,8 +8,8 @@
     <ProjectGuid>{C13AE8F5-392C-40DB-9FA8-AC7337A5C229}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>lightresizer</RootNamespace>
-    <AssemblyName>lightresizer</AssemblyName>
+    <RootNamespace>Imazen.LightResie</RootNamespace>
+    <AssemblyName>Imazen.LightResize</AssemblyName>
     <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -37,6 +37,7 @@
   <ItemGroup>
     <Compile Include="LightResize.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SinglePurposeResize.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
