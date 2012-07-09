@@ -151,7 +151,9 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// Resizes from one stream to another
+        /// Resizes from one stream to another. 
+        /// 
+        /// Warning - ensure that the first stream you open will be safely closed if the second stream fails to open! This means a using() or try/finally clause.
         /// </summary>
         /// <param name="s"></param>
         /// <param name="target"></param>
