@@ -1,9 +1,13 @@
 Imazen LightResize
 ===========
 
-Embeddable image resizing class for console, WPF, &amp; WinForms usage. 
+For all the whiners on StackOverflow - Here's an embeddable image resizing class for non-ASP.NET apps.
 
-## Goal 1: Make the shortest possible reusable implementation of image resizing that:
+It's extracted from [ImageResizer](http://imageresizing.net). All ASP.NET support (and dependencies) were removed. 
+
+Consider this the 'how-to' counterpart of [29 Image Resizing Pitfalls](http://nathanaeljones.com/163/20-image-resizing-pitfalls/).
+
+## Goal 1: Make the shortest possible *reusable* implementation of image resizing that:
 
 1. Does not introduce visual artifacts, sacrifice quality, truncate pixels, or make rounding errors.
 2. Does not leak or waste any memory, and does not perform wasteful operations.
@@ -28,9 +32,11 @@ Embeddable image resizing class for console, WPF, &amp; WinForms usage.
 11. Extensibility. No plugins, no events, no flexible command interface.
 12. Self-diagnostics and configuration. 
 
+### [LightResize.cs](https://github.com/imazen/lightresize/blob/master/LightResize.cs)
+
 The result is < 700 LOC, which is ideal for limited needs embedded usage scenarios like command-line or WinForms apps. 
 
-It's definitely a poor choice for ASP.NET usage, though - you're better off using http://imageresizing.net/ 
+It's definitely a poor choice for ASP.NET usage, though - you're better off using the library designed for that: [ImageResizer](http://imageresizing.net/)
 
 ## Goal 2: Make a single-purpose implementation of image resizing that:
 
@@ -40,4 +46,4 @@ It's definitely a poor choice for ASP.NET usage, though - you're better off usin
 4. Encodes only in Jpeg form.
 5. Only offers maximum constraint.
 
-
+### [SinglePurposeResize.cs](https://github.com/imazen/lightresize/blob/master/SinglePurposeResize.cs)

@@ -1,0 +1,10 @@
+bin/
+obj/
+Debug/
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+*.csproj.user
+*/_ReSharper
+_ReSharper*
