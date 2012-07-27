@@ -1,7 +1,7 @@
 ﻿/*
  * Copyright (c) 2012 Imazen 
  * 
- * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not designed for use within an ASP.NET application.
+ * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not optimized for use within an ASP.NET application.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
@@ -94,6 +94,9 @@ namespace Imazen.LightResize
         /// </summary>
         public bool IgnoreIccProfile { get; set; }
 
+        /// <summary>
+        /// Creates a empty Job, with Mode=Max, ScalingRules=Down, JpegQuality=90, IgnoreIccProfile=false, and Format=Jpg
+        /// </summary>
         public ResizeJob()
         {
             Mode = FitMode.Max;
