@@ -33,28 +33,28 @@ namespace Imazen.LightResize
         /// <summary>
         /// Instructs ResizeJob to leave the source stream open even after it is no longer needed for the job.
         /// </summary>
-        LeaveSourceStreamOpen, 
+        LeaveSourceStreamOpen = 1, 
         /// <summary>
         /// The source stream will be rewound to its original position after it is used. (Useful for reusing a stream or HttpFileUpload)
         /// Implies LeaveSourceStreamOpen
         /// </summary>
-        RewindSourceStream,
+        RewindSourceStream = 2,
         /// <summary>
         /// Instructs ResizeJob to leave the target stream open after it is finished writing. Make sure you close it externally!
         /// </summary>
-        LeaveTargetStreamOpen,
+        LeaveTargetStreamOpen = 4,
         /// <summary>
         /// Instructs ResizeJob to preserve the target bitmap (will cause mem leak unless disposed externally)
         /// </summary>
-        PreserveTargetBitmap,
+        PreserveTargetBitmap = 8,
         /// <summary>
         /// When a filename is specified, instructs ResizeJob to create any needed parent folder levels
         /// </summary>
-        CreateParentDirectory,
+        CreateParentDirectory = 16,
         /// <summary>
         /// The source stream will be copied into a memory-based stream so the original stream can be closed earlier. Required if you are writing to the same file you are reading from.
         /// </summary>
-        BufferEntireSourceStream
+        BufferEntireSourceStream = 32
     }
     /// <summary>
     /// Encapsulates a resizing operation. Very limited compared to ImageResizer, absolutely no ASP.NET support.
