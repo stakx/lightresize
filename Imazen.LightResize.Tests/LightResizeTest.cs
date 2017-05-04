@@ -1,20 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Gallio.Framework;
 using MbUnit.Framework;
-using MbUnit.Core;
-using MbUnit.Framework.ContractVerifiers;
 using System.Drawing;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
-using System.Net;
-using Imazen.LightResize;
 using System.Web;
 using System.Collections.Specialized;
 
-namespace Imazen.LightTest {
+namespace Imazen.LightResize.Tests
+{
     [TestFixture]
     public class LightResizeTest {
 
