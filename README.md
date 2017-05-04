@@ -32,7 +32,7 @@ Consider this the 'how-to' counterpart of [29 Image Resizing Pitfalls](http://na
 11. Extensibility. No plugins, no events, no flexible command interface.
 12. Self-diagnostics and configuration. 
 
-### [LightResize.cs](https://github.com/imazen/lightresize/blob/master/LightResize.cs)
+### [LightResize.cs](https://github.com/imazen/lightresize/blob/master/Imazen.LightResize/LightResize.cs)
 
 The result is < 700 LOC, which is ideal for limited needs embedded usage scenarios like command-line or WinForms apps. 
 
@@ -46,4 +46,4 @@ It's definitely a poor choice for ASP.NET usage, though - you're better off usin
 4. Encodes only in Jpeg form.
 5. Only offers maximum constraint.
 
-### [SinglePurposeResize.cs](https://github.com/imazen/lightresize/blob/master/SinglePurposeResize.cs)
+### [SinglePurposeResize.cs](https://github.com/imazen/lightresize/blob/master/Imazen.LightResize/SinglePurposeResize.cs)
