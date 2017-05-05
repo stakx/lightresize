@@ -1,10 +1,10 @@
 ﻿using System;
-using MbUnit.Framework;
-using System.Drawing;
-using System.IO;
-using System.Drawing.Imaging;
-using System.Web;
 using System.Collections.Specialized;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Web;
+using NUnit.Framework;
 
 namespace Imazen.LightResize.Tests
 {
@@ -72,10 +72,10 @@ namespace Imazen.LightResize.Tests
         }
 
         [Test]
-        [Row(50,50,"format=jpg&quality=100")]
-        [Row(1,1,"format=jpg&quality=100")]
-        [Row(50,50,"format=jpg&quality=-300")]
-        [Row(50,50,"format=png")]
+        [TestCase(50, 50, "format=jpg&quality=100")]
+        [TestCase(1, 1, "format=jpg&quality=100")]
+        [TestCase(50, 50, "format=jpg&quality=-300")]
+        [TestCase(50, 50, "format=png")]
         public void EncodeImage(int width, int height, string query){
             using (MemoryStream ms = new MemoryStream(8000)){
                 Job(query).Build(GetBitmapStream(width, height), ms, JobOptions.LeaveTargetStreamOpen);
