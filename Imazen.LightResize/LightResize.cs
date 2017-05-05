@@ -206,7 +206,7 @@ namespace Imazen.LightResize
                 try
                 {
                     //Buffer source stream if requested
-                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(s,false,0x1000) : s;
+                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(s, true, 0x1000) : s;
 
                     //Allow early disposal (enables same-file edits)
                     if (bufferSource && !leaveSourceStreamOpen)
