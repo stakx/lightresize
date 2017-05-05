@@ -12,6 +12,26 @@ namespace Imazen.LightResize.Tests
     public class ResizeJobTests {
 
         [Test]
+        [TestCase(default(JobOptions))]
+        [TestCase(JobOptions.BufferEntireSourceStream)]
+        [TestCase(JobOptions.BufferEntireSourceStream | JobOptions.LeaveSourceStreamOpen)]
+        [TestCase(JobOptions.LeaveSourceStreamOpen)]
+        [TestCase(JobOptions.LeaveSourceStreamOpen | JobOptions.RewindSourceStream)]
+        public void Build_Succeeds_EvenWhenSourceStreamPositionNotAt0(JobOptions jobOptions)
+        {
+            TestDelegate action = delegate
+            {
+                using (var sourceStream = GetBitmapStream(100, 100))
+                using (var targetStream = new MemoryStream())
+                {
+                    sourceStream.Seek(17, SeekOrigin.Begin);
+                    new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                }
+            };
+            Assert.DoesNotThrow(action);
+        }
+
+        [Test]
         [TestCase(JobOptions.LeaveSourceStreamOpen)]
         [TestCase(JobOptions.RewindSourceStream)]
         [TestCase(JobOptions.LeaveSourceStreamOpen | JobOptions.RewindSourceStream)]
