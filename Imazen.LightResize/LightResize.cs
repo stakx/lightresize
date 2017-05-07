@@ -17,6 +17,7 @@
 */
 
 using System;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -182,7 +183,6 @@ namespace Imazen.LightResize
                              }
 
                          }, options);
-
         }
         /// <summary>
         /// Allows callers to handle the encoding/usage phase.
@@ -264,7 +264,6 @@ namespace Imazen.LightResize
                     Dest = null;
                 }
             }
-
         }
 
         /// <summary>
@@ -358,7 +357,6 @@ namespace Imazen.LightResize
 
             DestSize = new Size((int)canvasSize.Width,(int)canvasSize.Height);
             TargetRect = BoxMath.CenterInside(targetSize, new RectangleF(0, 0, canvasSize.Width, canvasSize.Height));
-
         }
 
         /// <summary>
@@ -452,6 +450,7 @@ namespace Imazen.LightResize
     /// <summary>
     /// Provides adjustable JPEG encoding and 32-bit PNG encoding methods.
     /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     public class Encoding
     {
         /// <summary>
@@ -509,9 +508,9 @@ namespace Imazen.LightResize
     /// <summary>
     /// Provides simple layout math.
     /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     public class BoxMath
     {
-
         /// <summary>
         /// Scales <paramref name="inner"/> to fit inside <paramref name="bounding"/> while maintaining aspect ratio. Upscales and downscales.
         /// </summary>
@@ -571,9 +570,9 @@ namespace Imazen.LightResize
     /// <summary>
     /// Provides methods for copying streams.
     /// </summary>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     public static class StreamUtils
     {
-
         /// <summary>
         /// Copies the <paramref name="source"/> stream into a new <see cref="MemoryStream"/> instance.
         /// </summary>
