@@ -46,6 +46,7 @@
     <Compile Include="ResizeJobWithExplicitConsumer.cs" />
     <Compile Include="ResizeJobTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StreamUtilsTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Imazen.LightResize\Imazen.LightResize.csproj">
