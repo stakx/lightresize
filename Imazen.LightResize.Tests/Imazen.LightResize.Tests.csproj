@@ -43,6 +43,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ResizeJobWithExplicitConsumer.cs" />
     <Compile Include="ResizeJobTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

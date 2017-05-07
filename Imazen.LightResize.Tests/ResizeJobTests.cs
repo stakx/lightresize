@@ -170,6 +170,71 @@ namespace Imazen.LightResize.Tests
         }
 
         [Test]
+        [TestCase(FitMode.Crop)]
+        [TestCase(FitMode.Pad)]
+        [TestCase(FitMode.Stretch)]
+        public void Build_ProducesBitmapWithExactSpecifiedWidthAndHeight_GivenFitMode(FitMode mode)
+        {
+            using (var sourceStream = GetBitmapStream(100, 100))
+            using (var targetStream = Stream.Null)
+            {
+                var job = new ResizeJobWithExplicitConsumer { Mode = mode, Width = 12, Height = 34 };
+                job.Build(sourceStream, default(JobOptions), (output) =>
+                {
+                    Assert.AreEqual(output.Width, 12);
+                    Assert.AreEqual(output.Height, 34);
+                });
+            }
+        }
+
+        [Test]
+        public void Build_ProducesBitmapWithSmallerMaxAndSameAspectRatio_GivenFitModeMax()
+        {
+            using (var sourceStream = GetBitmapStream(100, 66))
+            using (var targetStream = Stream.Null)
+            {
+                var job = new ResizeJobWithExplicitConsumer { Mode = FitMode.Max, Width = 12, Height = 34 };
+                job.Build(sourceStream, default(JobOptions), (output) =>
+                {
+                    Assert.AreEqual(output.Width, 12);
+                    Assert.AreEqual(output.Height, 8);
+                });
+            }
+        }
+
+        [Test]
+        public void Build_ProducesBitmapNoLargerThanOriginal_GivenScaleModeDown()
+        {
+            using (var sourceStream = GetBitmapStream(100, 100))
+            using (var targetStream = Stream.Null)
+            {
+                var job = new ResizeJobWithExplicitConsumer { ScalingRules = ScaleMode.Down, Width = 200, Height = 200 };
+                job.Build(sourceStream, default(JobOptions), (output) =>
+                {
+                    Assert.AreEqual(output.Width, 100);
+                    Assert.AreEqual(output.Height, 100);
+                });
+            }
+        }
+
+        [Test]
+        [TestCase(ScaleMode.Both)]
+        [TestCase(ScaleMode.Canvas)]
+        public void Build_ProducesBitmapLargerThanOriginal_GivenScaleMode(ScaleMode scalingRules)
+        {
+            using (var sourceStream = GetBitmapStream(100, 100))
+            using (var targetStream = Stream.Null)
+            {
+                var job = new ResizeJobWithExplicitConsumer { ScalingRules = scalingRules, Width = 200, Height = 200 };
+                job.Build(sourceStream, default(JobOptions), (output) =>
+                {
+                    Assert.AreEqual(output.Width, 200);
+                    Assert.AreEqual(output.Height, 200);
+                });
+            }
+        }
+
+        [Test]
         [TestCase(50, 50, "format=jpg&quality=100")]
         [TestCase(1, 1, "format=jpg&quality=100")]
         [TestCase(50, 50, "format=jpg&quality=-300")]
