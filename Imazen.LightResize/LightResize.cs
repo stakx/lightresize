@@ -25,34 +25,34 @@ using System.IO;
 namespace Imazen.LightResize
 {
     /// <summary>
-    /// Allows you to customize how IO is handled
+    /// Instructs <see cref="ResizeJob"/> how to handle I/O (e.g. whether to buffer, dispose, and/or rewind the source stream, or whether to dispose the destination stream).
     /// </summary>
     [Flags]
     public enum JobOptions
     {
         /// <summary>
-        /// Instructs ResizeJob to leave the source stream open even after it is no longer needed for the job.
+        /// Instructs <see cref="ResizeJob"/> to leave the source stream open even after it is no longer needed for the job.
         /// </summary>
-        LeaveSourceStreamOpen = 1, 
+        LeaveSourceStreamOpen = 1,
         /// <summary>
-        /// The source stream will be rewound to its original position after it is used. (Useful for reusing a stream or HttpFileUpload)
-        /// Implies LeaveSourceStreamOpen
+        /// Instructs <see cref="ResizeJob"/> to rewind the source stream to its original position after it has been used. (This is useful when reusing a stream or <c>HttpFileUpload</c>.)
+        /// Implies <see cref="LeaveSourceStreamOpen"/>.
         /// </summary>
         RewindSourceStream = 2,
         /// <summary>
-        /// Instructs ResizeJob to leave the target stream open after it is finished writing. Make sure you close it externally!
+        /// Instructs <see cref="ResizeJob"/> to leave the target stream open after it is finished writing. Make sure you close it externally!
         /// </summary>
         LeaveTargetStreamOpen = 4,
         /// <summary>
-        /// Instructs ResizeJob to preserve the target bitmap (will cause mem leak unless disposed externally)
+        /// Instructs <see cref="ResizeJob"/> to preserve the target bitmap. (This will cause a memory leak unless disposed externally).
         /// </summary>
         PreserveTargetBitmap = 8,
         /// <summary>
-        /// When a filename is specified, instructs ResizeJob to create any needed parent folder levels
+        /// Instructs <see cref="ResizeJob"/> to create any needed parent folder levels when a file path is specified as the destination.
         /// </summary>
         CreateParentDirectory = 16,
         /// <summary>
-        /// The source stream will be copied into a memory-based stream so the original stream can be closed earlier. Required if you are writing to the same file you are reading from.
+        /// Instructs <see cref="ResizeJob"/> to copy the source stream into a memory buffer so that it can be closed earlier. (This is required if you are writing to the same file that you are reading from.)
         /// </summary>
         BufferEntireSourceStream = 32
     }
@@ -62,118 +62,123 @@ namespace Imazen.LightResize
     public class ResizeJob {
 
         /// <summary>
-        /// The width constraint
+        /// Gets or sets the width constraint.
         /// </summary>
         public int? Width { get; set; }
         /// <summary>
-        /// The height constraint
+        /// Gets or sets the height constraint.
         /// </summary>
         public int? Height { get; set; }
         /// <summary>
-        /// The constraint mode. Defaults to Max
+        /// Gets or sets the constraint mode. Defaults to <see cref="FitMode.Max"/>.
         /// </summary>
         public FitMode Mode { get; set; }
         /// <summary>
-        /// Should upscaling be permitted? Defaults to downscaling only.
+        /// Gets or sets whether upscaling be permitted. Defaults to <see cref="ScaleMode.Down"/> (i.e. downscaling only).
         /// </summary>
         public ScaleMode ScalingRules { get; set; }
         /// <summary>
-        /// The encoding format to use when writing the result to stream. Defaults to jpeg.
+        /// Gets or sets the encoding format to use when writing the resized image to the destination stream. Defaults to <see cref="OutputFormat.Jpg"/>.
         /// </summary>
         public OutputFormat Format { get; set; }
         /// <summary>
-        /// The jpeg encoding quality to use. '90' is the best value and the default. Seriously.
+        /// Gets or sets the JPEG encoding quality to use. 90 is the best value and the default. Seriously.
         /// </summary>
         public int JpegQuality { get; set; }
         /// <summary>
-        /// The background color to apply (null for transparency) White will be used if the encoding format is Jpeg and this is unspecified.
+        /// Gets or sets the background color to apply. <c>null</c> denotes transparency. <see cref="Color.White"/> will be used if the encoding format (<see cref="Format"/>) is <see cref="OutputFormat.Jpg"/> and this is unspecified.
         /// </summary>
         public Color? Matte { get; set; }
         /// <summary>
-        /// If true, the ICC profile will be ignored instead of being applied
+        /// If <c>true</c>, the ICC profile will be ignored instead of being applied.
         /// </summary>
         public bool IgnoreIccProfile { get; set; }
 
         /// <summary>
-        /// Creates a empty Job, with Mode=Max, ScalingRules=Down, JpegQuality=90, IgnoreIccProfile=false, and Format=Jpg
+        /// Creates a new instance of <see cref="ResizeJob"/>.
         /// </summary>
-        public ResizeJob()
+        /// <param name="mode">The initial value for the <see cref="Mode"/> property. Defaults to <see cref="FitMode.Max"/>.</param>
+        /// <param name="scalingRules">The initial value for the <see cref="ScalingRules"/> property. Defaults to <see cref="ScaleMode.Down"/>.</param>
+        /// <param name="ignoreIccProfile">The initial value for the <see cref="IgnoreIccProfile"/> property. Defaults to <c>false</c>.</param>
+        /// <param name="format">The initial value for the <see cref="Format"/> property. Defaults to <see cref="OutputFormat.Jpg"/>.</param>
+        /// <param name="jpegQuality">The initial value for the <see cref="JpegQuality"/> property. Defaults to 90.</param>
+        public ResizeJob(FitMode mode = FitMode.Max, ScaleMode scalingRules = ScaleMode.Down, bool ignoreIccProfile = false, OutputFormat format = OutputFormat.Jpg, int jpegQuality = 90)
         {
-            Mode = FitMode.Max;
-            ScalingRules = ScaleMode.Down;
-            JpegQuality = 90;
-            IgnoreIccProfile = false;
-            Format = OutputFormat.Jpg;
+            Mode = mode;
+            ScalingRules = scalingRules;
+            JpegQuality = jpegQuality;
+            IgnoreIccProfile = ignoreIccProfile;
+            Format = format;
         }
         /// <summary>
-        /// Resizes from one filename to another
+        /// Performs the image resize operation by reading from a file and writing to a file.
         /// </summary>
-        /// <param name="sourcePath"></param>
-        /// <param name="destPath"></param>
-        /// <param name="options"></param>
-        public void Build (string sourcePath, string destPath, JobOptions options)
+        /// <param name="sourcePath">The path of the file to read from.</param>
+        /// <param name="destinationPath">The path of the file to write to.</param>
+        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        public void Build (string sourcePath, string destinationPath, JobOptions options)
         {
-            if (sourcePath == destPath)
+            if (sourcePath == destinationPath)
                 options = options | JobOptions.BufferEntireSourceStream;
 
-            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destPath, options);
+            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destinationPath, options);
         }
         /// <summary>
-        /// Reads from filename, writes to stream
+        /// Performs the image resize operation by reading from a file and writing to a <see cref="Stream"/>.
         /// </summary>
-        /// <param name="sourcePath"></param>
-        /// <param name="target"></param>
-        /// <param name="options"></param>
-        public void Build(string sourcePath, Stream target, JobOptions options) {
+        /// <param name="sourcePath">The path of the file to read from.</param>
+        /// <param name="destination">The stream to write to.</param>
+        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        public void Build(string sourcePath, Stream destination, JobOptions options) {
             
-            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), target, options);
+            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destination, options);
         }
 
         /// <summary>
-        /// Reads from Stream s and writes to the given physical path
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a file.
         /// </summary>
-        /// <param name="s"></param>
-        /// <param name="destPath"></param>
-        /// <param name="options"></param>
-        public void Build(Stream s, string destPath, JobOptions options) {
+        /// <param name="source">The stream to read from.</param>
+        /// <param name="destinationPath">The path of the file to write to.</param>
+        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        public void Build(Stream source, string destinationPath, JobOptions options) {
 
             var createParents = ((options & JobOptions.CreateParentDirectory) != 0);
             if (createParents) {
-                string dirName = Path.GetDirectoryName(destPath);
+                string dirName = Path.GetDirectoryName(destinationPath);
                 if (!Directory.Exists(dirName)) Directory.CreateDirectory(dirName);
             }
 
-            Build(s,
+            Build(source,
                   delegate(Bitmap b, JobOptions option) {
-                      using (var fs = new FileStream(destPath, FileMode.Create, FileAccess.Write)) {
+                      using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write)) {
                           Encode(fs);
                       }
-
 
                   }, options);
         }
 
         /// <summary>
-        /// Resizes from one stream to another. 
-        /// 
-        /// Warning - ensure that the first stream you open will be safely closed if the second stream fails to open! This means a using() or try/finally clause.
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a <see cref="Stream"/>.
         /// </summary>
-        /// <param name="s"></param>
-        /// <param name="target"></param>
-        /// <param name="options"></param>
-        public void Build(Stream s, Stream target, JobOptions options)
+        /// <param name="source">The stream to read from.</param>
+        /// <param name="destination">The stream to write to.</param>
+        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <remarks>
+        /// Ensure that the first stream you open will be safely closed if the second stream fails to open! This means a <c>using()</c> or <c>try</c>/<c>finally</c> clause.
+        /// </remarks>
+        public void Build(Stream source, Stream destination, JobOptions options)
         {
-            Build(s, delegate(Bitmap b, JobOptions opts)
+            Build(source, delegate(Bitmap b, JobOptions opts)
                          {
                              try
                              {
                                  //Encode from temp bitmap to target stream
-                                 Encode(target);
+                                 Encode(destination);
                              }
                              finally
                              {
                                  //Ensure target stream is disposed if requested
-                                 if ((opts & JobOptions.LeaveTargetStreamOpen) == 0) target.Dispose();
+                                 if ((opts & JobOptions.LeaveTargetStreamOpen) == 0) destination.Dispose();
                              }
 
                          }, options);
@@ -182,23 +187,23 @@ namespace Imazen.LightResize
         /// <summary>
         /// Allows callers to handle the encoding/usage phase.
         /// </summary>
-        /// <param name="b"></param>
-        /// <param name="options"></param>
-        protected delegate void BitmapConsumer(Bitmap b, JobOptions options);
+        /// <param name="bitmap">The resized bitmap image.</param>
+        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        protected delegate void BitmapConsumer(Bitmap bitmap, JobOptions options);
 
         /// <summary>
-        /// Loads the bitmap from stream, processes, and renders, sending the result Bitmap to the 'consumer' callback for encoding or usage. 
+        /// Loads the bitmap from stream, processes, and renders, sending the result <see cref="Bitmap"/> to the <paramref name="consumer"/> callback for encoding or usage.
         /// </summary>
-        /// <param name="s"></param>
-        /// <param name="consumer"></param>
-        /// <param name="options"></param>
-        protected void Build(Stream s, BitmapConsumer consumer, JobOptions options)
+        /// <param name="source">The <see cref="Stream"/> to read from.</param>
+        /// <param name="consumer">The <see cref="BitmapConsumer"/> that will receive the resized <see cref="Bitmap"/> for further processing (e.g. writing to a destination).</param>
+        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        protected void Build(Stream source, BitmapConsumer consumer, JobOptions options)
         {
             var leaveSourceStreamOpen = ((options & JobOptions.LeaveSourceStreamOpen) != 0 ||
                                  (options & JobOptions.RewindSourceStream) != 0);
             
             var bufferSource = ((options & JobOptions.BufferEntireSourceStream) != 0);
-            var originalPosition = ((options & JobOptions.RewindSourceStream) != 0) ? s.Position : -1;
+            var originalPosition = ((options & JobOptions.RewindSourceStream) != 0) ? source.Position : -1;
             var preserveTemp = ((options & JobOptions.PreserveTargetBitmap) != 0);
 
             try
@@ -206,13 +211,13 @@ namespace Imazen.LightResize
                 try
                 {
                     //Buffer source stream if requested
-                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(s, true, 0x1000) : s;
+                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(source, true, 0x1000) : source;
 
                     //Allow early disposal (enables same-file edits)
                     if (bufferSource && !leaveSourceStreamOpen)
                     {
-                        s.Dispose();
-                        s = null;
+                        source.Dispose();
+                        source = null;
                     }
                     //Load bitmap
                     Source = new Bitmap(UnderlyingStream, !IgnoreIccProfile);
@@ -237,14 +242,14 @@ namespace Imazen.LightResize
                         try
                         {
                             //Dispose buffer
-                            if (UnderlyingStream != null && s != UnderlyingStream) UnderlyingStream.Dispose();
+                            if (UnderlyingStream != null && source != UnderlyingStream) UnderlyingStream.Dispose();
                         }
                         finally
                         {
                             UnderlyingStream = null; //Ensure reference is null
                             //Dispose source stream or restore its position
-                            if (!leaveSourceStreamOpen && s != null) s.Dispose();
-                            else if (originalPosition > -1 && s != null && s.CanSeek) s.Position = originalPosition;
+                            if (!leaveSourceStreamOpen && source != null) source.Dispose();
+                            else if (originalPosition > -1 && source != null && source.CanSeek) source.Position = originalPosition;
                         }
                     }
                 }
@@ -263,21 +268,21 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// The source bitmap
+        /// Gets or sets the source bitmap.
         /// </summary>
         protected Image Source { get; set; }
         /// <summary>
-        /// The stream underlying the bitmap -- cannot be disposed before the bitmap
+        /// Gets or sets the <see cref="Stream"/> underlying the source bitmap. (This stream cannot be disposed before the source bitmap.)
         /// </summary>
         protected Stream UnderlyingStream { get; set; }
 
         /// <summary>
-        /// The dimensions of the source image
+        /// Gets or sets the dimensions of the source image.
         /// </summary>
         protected Size OriginalSize { get; set; }
 
         /// <summary>
-        /// Layout: size and cropping constraints are calculated here
+        /// Layout: size and cropping constraints are calculated here.
         /// </summary>
         protected virtual void Layout()
         {
@@ -307,8 +312,6 @@ namespace Imazen.LightResize
                                          : (Height.HasValue
                                                ? new SizeF((float) ((double)Height*imageRatio),(float)Height)
                                                : SizeF.Empty));
-
-
 
                 //We now have width & height, our target size. It will only be a different aspect ratio from the image if both 'width' and 'height' are specified.
 
@@ -346,7 +349,6 @@ namespace Imazen.LightResize
                 //And reset the canvas size, unless canvas upscaling is enabled.
                 if (ScalingRules != ScaleMode.Canvas) canvasSize = targetSize;
             }
-            
 
             //May 12: require max dimension and round values to minimize rounding differences later.
             canvasSize.Width = Math.Max(1, (float)Math.Round(canvasSize.Width));
@@ -360,21 +362,24 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// Which part of the source image to copy
+        /// Which part of the source image to copy.
         /// </summary>
         protected RectangleF CopyRect { get; set; }
         /// <summary>
-        /// Where on the target canvas to render the source image
+        /// Where on the target canvas to render the source image.
         /// </summary>
         protected RectangleF TargetRect { get; set; }
         /// <summary>
-        /// The size to create the target image
+        /// The size to create the target image.
         /// </summary>
         protected Size DestSize { get; set; }
 
         /// <summary>
-        /// All rendering occurs here; see layout for the math part of things. Neither 'Dest' nor 'Source' are disposed here!
+        /// Performs the actual bitmap resize operation.
         /// </summary>
+        /// <remarks>
+        /// Only rendering occurs here. See <see cref="Layout"/> for the math part of things. Neither <see cref="Dest"/> nor <see cref="Source"/> are disposed here!
+        /// </remarks>
         protected virtual void Render()
         {
             //Create new bitmap using calculated size. 
@@ -393,7 +398,6 @@ namespace Imazen.LightResize
                 g.CompositingQuality = CompositingQuality.HighQuality;
                 //Prevents really ugly transparency issues
                 g.CompositingMode = CompositingMode.SourceOver;
-
 
                 //If the image doesn't support transparency, we need to fill the background color now.
                 var background = Matte ?? Color.Transparent;
@@ -427,38 +431,34 @@ namespace Imazen.LightResize
                 }
                 g.Flush(FlushIntention.Flush);
             }
-
-
         }
 
         /// <summary>
-        /// The Bitmap object the target image is rendered to before encoding.
+        /// The <see cref="Bitmap"/> object the target image is rendered to before encoding.
         /// </summary>
         protected Bitmap Dest { get; set; }
 
         /// <summary>
-        /// Dest is encoded. 
+        /// Encodes <see cref="Dest"/>.
         /// </summary>
-        /// <param name="target"></param>
+        /// <param name="target">The stream to write to.</param>
         protected virtual void Encode(Stream target)
         {
             if (Format == OutputFormat.Jpg) Encoding.SaveJpeg(Dest,target,JpegQuality);
             else if (Format == OutputFormat.Png) Encoding.SavePng(Dest,target);
         }
-
-    
     }
 
     /// <summary>
-    /// Provides adjustable Jpeg encoding and 32-bit PNG encoding methods
+    /// Provides adjustable JPEG encoding and 32-bit PNG encoding methods.
     /// </summary>
     public class Encoding
     {
         /// <summary>
-        /// Looks up encoders by mime-type
+        /// Looks up encoders by MIME type.
         /// </summary>
-        /// <param name="mimeType"></param>
-        /// <returns></returns>
+        /// <param name="mimeType">The MIME type to look up.</param>
+        /// <returns>The <see cref="ImageCodecInfo"/> that matches the given MIME type, or <c>null</c> if no match was found.</returns>
         public static ImageCodecInfo GetImageCodecInfo(string mimeType) {
             var info = ImageCodecInfo.GetImageEncoders();
             foreach (var ici in info)
@@ -467,12 +467,10 @@ namespace Imazen.LightResize
             return null;
         }
         /// <summary>
-        /// Saves the specified image to the specified stream using jpeg compression of the specified quality.
+        /// Saves the specified image to the specified stream using JPEG compression of the specified quality.
         /// </summary>
         /// <param name="b"></param>
-        /// <param name="quality">A number between 0 and 100. Defaults to 90 if passed a negative number. Numbers over 100 are truncated to 100. 
-        /// 90 is a *very* good setting.
-        /// </param>
+        /// <param name="quality">A number between 0 and 100. Defaults to 90 if passed a negative number. Numbers over 100 are truncated to 100. 90 is a *very* good setting.</param>
         /// <param name="target"></param>
         public static void SaveJpeg(Image b, Stream target, int quality) {
             //Validate quality
@@ -489,7 +487,7 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// Saves the image in png form. If Stream 'target' is not seekable, a temporary MemoryStream will be used to buffer the image data into the stream
+        /// Saves the image in PNG format. If the <see cref="Stream"/> denoted by <paramref name="target"/> is not seekable, a temporary <see cref="MemoryStream"/> will be used to buffer the image data into the stream.
         /// </summary>
         /// <param name="img"></param>
         /// <param name="target"></param>
@@ -509,13 +507,13 @@ namespace Imazen.LightResize
     }
 
     /// <summary>
-    /// Provides simple layout math
+    /// Provides simple layout math.
     /// </summary>
     public class BoxMath
     {
 
         /// <summary>
-        /// Scales 'inner' to fit inside 'bounding' while maintaining aspect ratio. Upscales and downscales.
+        /// Scales <paramref name="inner"/> to fit inside <paramref name="bounding"/> while maintaining aspect ratio. Upscales and downscales.
         /// </summary>
         /// <param name="inner"></param>
         /// <param name="bounding"></param>
@@ -534,7 +532,7 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// Returns true if 'inner' fits inside or equals 'outer'
+        /// Returns <c>true</c> if <paramref name="inner"/> fits inside or equals <paramref name="outer"/>.
         /// </summary>
         /// <param name="inner"></param>
         /// <param name="outer"></param>
@@ -545,7 +543,7 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// Rounds a floating-point rectangle to an integer rectangle using System.Round
+        /// Rounds a floating-point <see cref="RectangleF"/> to an integer <see cref="Rectangle"/> using <see cref="System.Math.Round(double)"/>.
         /// </summary>
         /// <param name="r"></param>
         /// <returns></returns>
@@ -553,7 +551,7 @@ namespace Imazen.LightResize
             return new Rectangle((int)Math.Round(r.X), (int)Math.Round(r.Y), (int)Math.Round(r.Width), (int)Math.Round(r.Height));
         }
         /// <summary>
-        /// Rounds a SizeF structure using System.Round
+        /// Rounds a floating-point <see cref="SizeF"/> structure to an integer <see cref="Size"/> using <see cref="System.Math.Round(double)"/>.
         /// </summary>
         /// <param name="sizeF"></param>
         /// <returns></returns>
@@ -562,73 +560,72 @@ namespace Imazen.LightResize
         }
 
         /// <summary>
-        /// Creates a rectangle of size 'size' with a center matching that of bounds. No rounding is performed.
+        /// Creates a rectangle of size <paramref name="size"/> with a center matching that of <paramref name="bounds"/>. No rounding is performed.
         /// </summary>
         /// <returns></returns>
         public static RectangleF CenterInside(SizeF size, RectangleF bounds) {
             return new RectangleF(bounds.Width / 2 + bounds.X - (size.Width / 2), bounds.Height / 2 + bounds.Y - (size.Height / 2), size.Width, size.Height);
         }
-
     }
 
     /// <summary>
-    /// Provides  methods for copying streams
+    /// Provides methods for copying streams.
     /// </summary>
     public static class StreamUtils
     {
 
         /// <summary>
-        /// Copies the current stream into a new MemoryStream instance.
+        /// Copies the <paramref name="source"/> stream into a new <see cref="MemoryStream"/> instance.
         /// </summary>
-        /// <param name="s"></param>
-        /// <param name="entireStream">True to copy entire stream if seeakable, false to only copy remaining data</param>
-        /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required. Default: 4KiB</param>
+        /// <param name="source">The stream to copy.</param>
+        /// <param name="entireStream"><c>true</c> to copy the entire stream if it is seekable; <c>false</c> to only copy the remaining data.</param>
+        /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required.</param>
         /// <returns></returns>
-        public static MemoryStream CopyToMemoryStream(Stream s, bool entireStream, int chunkSize)
+        public static MemoryStream CopyToMemoryStream(Stream source, bool entireStream, int chunkSize)
         {
             MemoryStream ms =
-                new MemoryStream(s.CanSeek ? ((int) s.Length + 8 - (entireStream ? 0 : (int) s.Position)) : chunkSize);
-            CopyToStream(s, ms, entireStream, chunkSize);
+                new MemoryStream(source.CanSeek ? ((int) source.Length + 8 - (entireStream ? 0 : (int) source.Position)) : chunkSize);
+            CopyToStream(source, ms, entireStream, chunkSize);
             ms.Position = 0;
             return ms;
         }
 
         /// <summary>
-        /// Copies this stream into the given stream
+        /// Copies the <paramref name="source"/> stream to the <paramref name="destination"/> stream.
         /// </summary>
-        /// <param name="src"></param>
-        /// <param name="dest">The stream to write to</param>
-        /// <param name="entireStream">True to copy entire stream if seeakable, false to only copy remaining data</param>
-        /// <param name="chunkSize">True to copy entire stream if seeakable, false to only copy remaining data</param>
-        public static void CopyToStream(Stream src, Stream dest, bool entireStream, int chunkSize)
+        /// <param name="source">The stream to read from.</param>
+        /// <param name="destination">The stream to write to.</param>
+        /// <param name="entireStream"><c>true</c> to copy the entire stream if it is seekable; <c>false</c> to only copy the remaining data.</param>
+        /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required.</param>
+        public static void CopyToStream(Stream source, Stream destination, bool entireStream, int chunkSize)
         {
-            if (entireStream && src.CanSeek) src.Seek(0, SeekOrigin.Begin);
+            if (entireStream && source.CanSeek) source.Seek(0, SeekOrigin.Begin);
 
-            if (src is MemoryStream && src.CanSeek)
+            if (source is MemoryStream && source.CanSeek)
             {
                 try
                 {
-                    int pos = (int) src.Position;
-                    dest.Write(((MemoryStream) src).GetBuffer(), pos, (int) (src.Length - pos));
+                    int pos = (int) source.Position;
+                    destination.Write(((MemoryStream) source).GetBuffer(), pos, (int) (source.Length - pos));
                     return;
                 }
                 catch (UnauthorizedAccessException) //If we can't slice it, then we read it like a normal stream
                 {
                 }
             }
-            if (dest is MemoryStream && src.CanSeek)
+            if (destination is MemoryStream && source.CanSeek)
             {
                 try
                 {
-                    int srcPos = (int) src.Position;
-                    int pos = (int) dest.Position;
-                    int length = (int) (src.Length - srcPos) + pos;
-                    dest.SetLength(length);
+                    int srcPos = (int) source.Position;
+                    int pos = (int) destination.Position;
+                    int length = (int) (source.Length - srcPos) + pos;
+                    destination.SetLength(length);
 
-                    var data = ((MemoryStream) dest).GetBuffer();
+                    var data = ((MemoryStream) destination).GetBuffer();
                     while (pos < length)
                     {
-                        pos += src.Read(data, pos, length - pos);
+                        pos += source.Read(data, pos, length - pos);
                     }
                     return;
                 }
@@ -636,17 +633,15 @@ namespace Imazen.LightResize
                 {
                 }
             }
-            int size = (src.CanSeek) ? Math.Min((int) (src.Length - src.Position), chunkSize) : chunkSize;
+            int size = (source.CanSeek) ? Math.Min((int) (source.Length - source.Position), chunkSize) : chunkSize;
             byte[] buffer = new byte[size];
             int n;
             do
             {
-                n = src.Read(buffer, 0, buffer.Length);
-                dest.Write(buffer, 0, n);
+                n = source.Read(buffer, 0, buffer.Length);
+                destination.Write(buffer, 0, n);
             } while (n != 0);
         }
-
-
     }
 
     /// <summary>
@@ -654,45 +649,51 @@ namespace Imazen.LightResize
     /// </summary>
     public enum FitMode {
         /// <summary>
-        /// Width and height are considered maximum values. The resulting image may be smaller to maintain its aspect ratio. The image may also be smaller if the source image is smaller
+        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered maximum values. The resulting image may be smaller to maintain its aspect ratio. The image may also be smaller if the source image is smaller.
         /// </summary>
         Max,
         /// <summary>
-        /// Width and height are considered exact values - padding is used if there is an aspect ratio difference.
+        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. Padding is used if there is an aspect ratio difference.
         /// </summary>
         Pad,
         /// <summary>
-        /// Width and height are considered exact values - cropping is used if there is an aspect ratio difference.
+        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. Cropping is used if there is an aspect ratio difference.
         /// </summary>
         Crop,
         /// <summary>
-        /// Width and height are considered exact values - if there is an aspect ratio difference, the image is stretched.
+        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. If there is an aspect ratio difference, the image is stretched.
         /// </summary>
         Stretch,
-
     }
+
     /// <summary>
     /// Controls whether the image is allowed to upscale, downscale, both, or if only the canvas gets to be upscaled.
     /// </summary>
     public enum ScaleMode {
         /// <summary>
-        /// The default. Only downsamples images - never enlarges. If an image is smaller than 'width' and 'height', the image coordinates are used instead.
+        /// Only downsample images, never enlarge. If an image is smaller than <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>, the image coordinates are used instead.
         /// </summary>
         Down,
         /// <summary>
-        /// Upscales and downscales images according to 'width' and 'height'.
+        /// Upscales and downscales images according to <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>.
         /// </summary>
         Both,
         /// <summary>
-        /// When the image is smaller than the requested size, padding is added instead of stretching the image
+        /// When the image is smaller than the requested size, padding is added instead of stretching the image.
         /// </summary>
         Canvas
     }
     /// <summary>
-    /// Controls the encoding format. Auto-detection is not enabled.
+    /// Specifies the encoding format. Auto-detection is not enabled.
     /// </summary>
     public enum OutputFormat {
-        Jpg, 
+        /// <summary>
+        /// The JPEG file format.
+        /// </summary>
+        Jpg,
+        /// <summary>
+        /// The PNG file format.
+        /// </summary>
         Png
     }
 }

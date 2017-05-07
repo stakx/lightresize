@@ -25,25 +25,27 @@ using System.IO;
 namespace Imazen.LightResize {
     /// <summary>
     /// This implementation of image resizing sacrifices 30-50% performance for simplicty. 
-    /// It only supports max-constraints resizing, jpeg encoding, and stream->stream processing.
+    /// It only supports max-constraints resizing, JPEG encoding, and stream to stream processing.
     /// </summary>
     public class SinglePurposeResize {
         /// <summary>
-        /// Less efficient than LightResize, and cannot resize files in place. Caller MUST ensure the first stream is disposed if the second stream fails to open. 
-        /// 
-        /// I.e, place first stream in using(){} clause, and open the second stream inside it before calling Resize()
+        /// Performs an image resize operation by reading from a file, applying to specified max constraints and writing to a file with the specified JPEG encoding quality.
         /// </summary>
-        /// <param name="s"></param>
-        /// <param name="target"></param>
-        /// <param name="maxwidth"></param>
-        /// <param name="maxheight"></param>
-        /// <param name="jpegQuality"></param>
-        public static void Resize(Stream s, Stream target, int? maxwidth, int? maxheight, int jpegQuality = 90)
+        /// <remarks>
+        /// Less efficient than <see cref="ResizeJob"/>, and cannot resize files in place. The caller MUST ensure that the first stream is disposed if the second stream fails to open.
+        /// I.e, place the first stream in a <c>using()</c> clause and open the second stream inside it before calling <see cref="Resize"/>.
+        /// </remarks>
+        /// <param name="source">The stream to read from.</param>
+        /// <param name="destination">The stream to write to.</param>
+        /// <param name="maxwidth">The width constraint.</param>
+        /// <param name="maxheight">The height constraint.</param>
+        /// <param name="jpegQuality">The JPEG encoding quality to use. A value between 0 and 100. 90 is the best value and the default.</param>
+        public static void Resize(Stream source, Stream destination, int? maxwidth, int? maxheight, int jpegQuality = 90)
         {
             //Ensure source bitmap, source stream, and target stream are disposed in that order.
-            using (target)
-            using (s)
-            using (var b = new Bitmap(s,true))
+            using (destination)
+            using (source)
+            using (var b = new Bitmap(source,true))
             {
                 var orig = b.Size;
 
@@ -58,7 +60,7 @@ namespace Imazen.LightResize {
                     w = orig.Width;
                     h = orig.Height;
                     //No change? Render-as-is...
-                    RenderAndEncode(b, orig, target, jpegQuality);
+                    RenderAndEncode(b, orig, destination, jpegQuality);
                     return;
                 }
                 else if (w < 1) h = w/imageRatio;
@@ -75,7 +77,7 @@ namespace Imazen.LightResize {
                 //Don't permit upscaling
                 if (orig.Width <= scaled.Width && orig.Height <= scaled.Height) scaled = orig;
                 //Render
-                RenderAndEncode(b,scaled,target,jpegQuality);
+                RenderAndEncode(b,scaled,destination,jpegQuality);
 
             }
         }
@@ -84,11 +86,11 @@ namespace Imazen.LightResize {
         /// Resizes the provided bitmap to the given target size and writes it to the target stream with jpeg encoding.
         /// Warning: Does NOT dispose the source bitmap, source stream, or target stream! 
         /// </summary>
-        /// <param name="b">The source bitmap</param>
-        /// <param name="targetSize">The target size</param>
-        /// <param name="target">The target stream</param>
-        /// <param name="jpegQuality">The target quality</param>
-        private static void RenderAndEncode(Bitmap b, Size targetSize, Stream target, int jpegQuality)
+        /// <param name="bitmap">The source bitmap.</param>
+        /// <param name="targetSize">The target size.</param>
+        /// <param name="destination">The stream to write to.</param>
+        /// <param name="jpegQuality">The JPEG encoding quality to use. A value between 0 and 100. 90 is the best value.</param>
+        private static void RenderAndEncode(Bitmap bitmap, Size targetSize, Stream destination, int jpegQuality)
         {
             //Validate quality
             if (jpegQuality < 0) jpegQuality = 90; //90 is a very good default to stick with.
@@ -121,7 +123,7 @@ namespace Imazen.LightResize {
                         ia.SetWrapMode(WrapMode.TileFlipXY);
 
                         //Render!
-                        g.DrawImage(b,new Rectangle(0,0,targetSize.Width,targetSize.Height),0,0,b.Width,b.Height, GraphicsUnit.Pixel, ia);
+                        g.DrawImage(bitmap,new Rectangle(0,0,targetSize.Width,targetSize.Height),0,0,bitmap.Width,bitmap.Height, GraphicsUnit.Pixel, ia);
                     }
                     g.Flush(FlushIntention.Flush);
                 }
@@ -135,7 +137,7 @@ namespace Imazen.LightResize {
                         using (var p = new EncoderParameters(1))
                         using (var ep = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, (long)jpegQuality)) {
                             p.Param[0] = ep;
-                            b.Save(target, ici, p);
+                            bitmap.Save(destination, ici, p);
                         }
                         break;
                     }

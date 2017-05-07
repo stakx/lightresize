@@ -16,4 +16,8 @@
     <Description>Embeddable image resizing library for console, WPF, &amp; WinForms usage. Not suitable for use in ASP.NET applications.</Description>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Imazen.LightResize.xml</DocumentationFile>
+  </PropertyGroup>
+
 </Project>
