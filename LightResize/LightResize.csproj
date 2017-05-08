@@ -3,13 +3,13 @@
 
   <PropertyGroup>
     <TargetFrameworks>net20;net40</TargetFrameworks>
-    <Authors>Nathanael Jones</Authors>
+    <Authors>Nathanael Jones, stakx</Authors>
     <Company></Company>
-    <Copyright>Copyright © Imazen 2012-2017</Copyright>
-    <PackageProjectUrl>https://github.com/imazen/lightresize</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/imazen/lightresize.git</RepositoryUrl>
+    <Copyright>Copyright © 2012 Imazen, 2017 stakx</Copyright>
+    <PackageProjectUrl>https://github.com/stakx/lightresize</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/stakx/lightresize.git</RepositoryUrl>
     <RepositoryType>Git</RepositoryType>
-    <PackageLicenseUrl>https://github.com/imazen/lightresize/blob/master/license.md</PackageLicenseUrl>
+    <PackageLicenseUrl>https://github.com/stakx/lightresize/blob/master/LICENSE.md</PackageLicenseUrl>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <PackageTags>imaging image-resizing bitmap wpf windows-forms system-drawing gdi+</PackageTags>
     <Product>LightResize</Product>
@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Imazen.LightResize.xml</DocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\LightResize.xml</DocumentationFile>
   </PropertyGroup>
 
 </Project>

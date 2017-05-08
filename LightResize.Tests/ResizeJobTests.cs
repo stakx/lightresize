@@ -6,7 +6,7 @@ using System.IO;
 using System.Web;
 using NUnit.Framework;
 
-namespace Imazen.LightResize.Tests
+namespace LightResize.Tests
 {
     [TestFixture]
     public class ResizeJobTests {

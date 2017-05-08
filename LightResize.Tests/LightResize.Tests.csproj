@@ -4,11 +4,11 @@
   <PropertyGroup>
     <TargetFramework>net40</TargetFramework>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-    <Authors>Nathanael Jones</Authors>
+    <Authors>Nathanael Jones, stakx</Authors>
     <Company></Company>
     <Product>LightResize</Product>
     <Description></Description>
-    <Copyright>Copyright © Imazen 2012-2017</Copyright>
+    <Copyright>Copyright © 2012 Imazen, 2017 stakx</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Imazen.LightResize\Imazen.LightResize.csproj" />
+    <ProjectReference Include="..\LightResize\LightResize.csproj" />
   </ItemGroup>
 
   <ItemGroup>

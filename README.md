@@ -1,5 +1,12 @@
-Imazen LightResize
-===========
+# LightResize #
+
+An embeddable image resizing library for non-ASP.NET apps.
+
+## What's new? ##
+
+**8 May 2017**: Wondering why you're at [stakx/lightresize](https://github.com/stakx/lightresize) when you followed a link to [Imazen/lightresize](https://github.com/Imazen/lightresize)? Don't worry, this is not by mistake: [@nathanaeljones](https://github.com/nathanaeljones), the original author of LightResize, has handed maintenance of his project over to me, so it's got a new home and GitHub automatically brought you here. My aim is to keep this small library useful and easily available to those who want to use it.
+
+## What is LightResize? ##
 
 For all the whiners on StackOverflow - Here's an embeddable image resizing class for non-ASP.NET apps.
 
@@ -15,7 +22,7 @@ Consider this the 'how-to' counterpart of [29 Image Resizing Pitfalls](http://na
 4. Encodes optimally to jpeg and reliably to PNG.
 5. Offers the 4 basic constraint modes: max, pad, crop, and stretch (Only adds 30 lines of code)
 
-## What I had to cut:
+### What had to be cut:
 
 1. All .GIF support, animated and otherwise. No frame selection or TIFF page selection either.
 2. 8-bit PNG support
@@ -32,9 +39,9 @@ Consider this the 'how-to' counterpart of [29 Image Resizing Pitfalls](http://na
 11. Extensibility. No plugins, no events, no flexible command interface.
 12. Self-diagnostics and configuration. 
 
-### [LightResize.cs](https://github.com/imazen/lightresize/blob/master/Imazen.LightResize/LightResize.cs)
+### [LightResize.cs](https://github.com/stakx/lightresize/blob/master/LightResize/LightResize.cs)
 
-The result is < 700 LOC, which is ideal for limited needs embedded usage scenarios like command-line or WinForms apps. 
+The result is < 700 LOC, which is ideal for limited needs embedded usage scenarios like command-line or WinForms apps.
 
 It's definitely a poor choice for ASP.NET usage, though - you're better off using the library designed for that: [ImageResizer](http://imageresizing.net/)
 
@@ -46,4 +53,4 @@ It's definitely a poor choice for ASP.NET usage, though - you're better off usin
 4. Encodes only in Jpeg form.
 5. Only offers maximum constraint.
 
-### [SinglePurposeResize.cs](https://github.com/imazen/lightresize/blob/master/Imazen.LightResize/SinglePurposeResize.cs)
+### [SinglePurposeResize.cs](https://github.com/stakx/lightresize/blob/master/LightResize/SinglePurposeResize.cs)

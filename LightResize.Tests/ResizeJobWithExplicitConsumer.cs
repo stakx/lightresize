@@ -2,7 +2,7 @@
 using System.Drawing;
 using System.IO;
 
-namespace Imazen.LightResize.Tests
+namespace LightResize.Tests
 {
     internal sealed class ResizeJobWithExplicitConsumer : ResizeJob
     {

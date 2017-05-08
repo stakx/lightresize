@@ -1,5 +1,6 @@
 The MIT License (MIT)
 
+Copyright (c) 2017 stakx
 Copyright (c) 2013 Imazen
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

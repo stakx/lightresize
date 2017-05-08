@@ -1,4 +1,5 @@
 ﻿/*
+ * Copyright (c) 2017 stakx
  * Copyright (c) 2012 Imazen 
  * 
  * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not optimized for use within an ASP.NET application.
@@ -23,7 +24,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 
-namespace Imazen.LightResize
+namespace LightResize
 {
     /// <summary>
     /// Instructs <see cref="ResizeJob"/> how to handle I/O (e.g. whether to buffer, dispose, and/or rewind the source stream, or whether to dispose the destination stream).

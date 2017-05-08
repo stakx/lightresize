@@ -1,7 +1,7 @@
 ﻿using NUnit.Framework;
 using System.IO;
 
-namespace Imazen.LightResize.Tests
+namespace LightResize.Tests
 {
     [TestFixture]
     public sealed class StreamUtilsTests

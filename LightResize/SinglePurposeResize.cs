@@ -1,4 +1,5 @@
 ﻿/*
+ * Copyright (c) 2017 stakx
  * Copyright (c) 2012 Imazen 
  * 
  * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not designed for use within an ASP.NET application.
@@ -22,7 +23,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 
-namespace Imazen.LightResize {
+namespace LightResize {
     /// <summary>
     /// This implementation of image resizing sacrifices 30-50% performance for simplicty. 
     /// It only supports max-constraints resizing, JPEG encoding, and stream to stream processing.
