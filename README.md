@@ -39,7 +39,7 @@ Consider this the 'how-to' counterpart of [29 Image Resizing Pitfalls](http://na
 11. Extensibility. No plugins, no events, no flexible command interface.
 12. Self-diagnostics and configuration. 
 
-### [LightResize.cs](https://github.com/stakx/lightresize/blob/master/LightResize/LightResize.cs)
+### [LightResize.cs](https://github.com/stakx/lightresize/blob/dcee788b76fe5f3c8965f04066fd874a718723c9/LightResize.cs)
 
 The result is < 700 LOC, which is ideal for limited needs embedded usage scenarios like command-line or WinForms apps.
 
@@ -53,4 +53,4 @@ It's definitely a poor choice for ASP.NET usage, though - you're better off usin
 4. Encodes only in Jpeg form.
 5. Only offers maximum constraint.
 
-### [SinglePurposeResize.cs](https://github.com/stakx/lightresize/blob/master/LightResize/SinglePurposeResize.cs)
+### [SinglePurposeResize.cs](https://github.com/stakx/lightresize/blob/dcee788b76fe5f3c8965f04066fd874a718723c9/SinglePurposeResize.cs)

@@ -1,21 +1,21 @@
 ﻿/*
  * Copyright (c) 2017 stakx
- * Copyright (c) 2012 Imazen 
- * 
+ * Copyright (c) 2012 Imazen
+ *
  * This software is not a replacement for ImageResizer (http://imageresizing.net); and is not optimized for use within an ASP.NET application.
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated 
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
  * documentation files (the "Software"), to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, 
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
  * and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
  * THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-*/
+ */
 
 using System;
 using System.ComponentModel;
@@ -26,38 +26,6 @@ using System.IO;
 
 namespace LightResize
 {
-    /// <summary>
-    /// Instructs <see cref="ResizeJob"/> how to handle I/O (e.g. whether to buffer, dispose, and/or rewind the source stream, or whether to dispose the destination stream).
-    /// </summary>
-    [Flags]
-    public enum JobOptions
-    {
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to leave the source stream open even after it is no longer needed for the job.
-        /// </summary>
-        LeaveSourceStreamOpen = 1,
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to rewind the source stream to its original position after it has been used. (This is useful when reusing a stream or <c>HttpFileUpload</c>.)
-        /// Implies <see cref="LeaveSourceStreamOpen"/>.
-        /// </summary>
-        RewindSourceStream = 2,
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to leave the target stream open after it is finished writing. Make sure you close it externally!
-        /// </summary>
-        LeaveTargetStreamOpen = 4,
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to preserve the target bitmap. (This will cause a memory leak unless disposed externally).
-        /// </summary>
-        PreserveTargetBitmap = 8,
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to create any needed parent folder levels when a file path is specified as the destination.
-        /// </summary>
-        CreateParentDirectory = 16,
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to copy the source stream into a memory buffer so that it can be closed earlier. (This is required if you are writing to the same file that you are reading from.)
-        /// </summary>
-        BufferEntireSourceStream = 32
-    }
     /// <summary>
     /// Encapsulates a resizing operation. Very limited compared to ImageResizer, absolutely no ASP.NET support.
     /// </summary>
@@ -446,254 +414,5 @@ namespace LightResize
             if (Format == OutputFormat.Jpg) Encoding.SaveJpeg(Dest,target,JpegQuality);
             else if (Format == OutputFormat.Png) Encoding.SavePng(Dest,target);
         }
-    }
-
-    /// <summary>
-    /// Provides adjustable JPEG encoding and 32-bit PNG encoding methods.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public class Encoding
-    {
-        /// <summary>
-        /// Looks up encoders by MIME type.
-        /// </summary>
-        /// <param name="mimeType">The MIME type to look up.</param>
-        /// <returns>The <see cref="ImageCodecInfo"/> that matches the given MIME type, or <c>null</c> if no match was found.</returns>
-        public static ImageCodecInfo GetImageCodecInfo(string mimeType) {
-            var info = ImageCodecInfo.GetImageEncoders();
-            foreach (var ici in info)
-                if (ici.MimeType.Equals(mimeType, StringComparison.OrdinalIgnoreCase)) return ici;
-
-            return null;
-        }
-        /// <summary>
-        /// Saves the specified image to the specified stream using JPEG compression of the specified quality.
-        /// </summary>
-        /// <param name="b"></param>
-        /// <param name="quality">A number between 0 and 100. Defaults to 90 if passed a negative number. Numbers over 100 are truncated to 100. 90 is a *very* good setting.</param>
-        /// <param name="target"></param>
-        public static void SaveJpeg(Image b, Stream target, int quality) {
-            //Validate quality
-            if (quality < 0) quality = 90; //90 is a very good default to stick with.
-            if (quality > 100) quality = 100;
-            //http://msdn.microsoft.com/en-us/library/ms533844(VS.85).aspx
-            //Prepare paramater for encoder
-            using (var p = new EncoderParameters(1)) {
-                using (var ep = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, (long)quality)) {
-                    p.Param[0] = ep;
-                    b.Save(target, GetImageCodecInfo("image/jpeg"), p);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Saves the image in PNG format. If the <see cref="Stream"/> denoted by <paramref name="target"/> is not seekable, a temporary <see cref="MemoryStream"/> will be used to buffer the image data into the stream.
-        /// </summary>
-        /// <param name="img"></param>
-        /// <param name="target"></param>
-        public static void SavePng(Image img, Stream target) {
-            if (!target.CanSeek) {
-                //Write to an intermediate, seekable memory stream (PNG compression requires it)
-                using (var ms = new MemoryStream(4096)) {
-                    img.Save(ms, ImageFormat.Png);
-                    ms.WriteTo(target);
-                }
-            } else {
-                //image/png
-                //  The parameter list requires 0 bytes.
-                img.Save(target, ImageFormat.Png);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Provides simple layout math.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public class BoxMath
-    {
-        /// <summary>
-        /// Scales <paramref name="inner"/> to fit inside <paramref name="bounding"/> while maintaining aspect ratio. Upscales and downscales.
-        /// </summary>
-        /// <param name="inner"></param>
-        /// <param name="bounding"></param>
-        /// <returns></returns>
-        public static SizeF ScaleInside(SizeF inner, SizeF bounding) {
-            double innerRatio = inner.Width / inner.Height;
-            double outerRatio = bounding.Width / bounding.Height;
-
-            if (outerRatio > innerRatio) {
-                //Width is wider - so bound by height.
-                return new SizeF((float)(innerRatio * bounding.Height), (float)(bounding.Height));
-            } else {
-                //Height is higher, or aspect ratios are identical.
-                return new SizeF((float)(bounding.Width), (float)(bounding.Width / innerRatio));
-            }
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if <paramref name="inner"/> fits inside or equals <paramref name="outer"/>.
-        /// </summary>
-        /// <param name="inner"></param>
-        /// <param name="outer"></param>
-        /// <returns></returns>
-        public static bool FitsInside(SizeF inner, SizeF outer)
-        {
-            return (inner.Width <= outer.Width && inner.Height <= outer.Height);
-        }
-
-        /// <summary>
-        /// Rounds a floating-point <see cref="RectangleF"/> to an integer <see cref="Rectangle"/> using <see cref="System.Math.Round(double)"/>.
-        /// </summary>
-        /// <param name="r"></param>
-        /// <returns></returns>
-        public static Rectangle ToRectangle(RectangleF r) {
-            return new Rectangle((int)Math.Round(r.X), (int)Math.Round(r.Y), (int)Math.Round(r.Width), (int)Math.Round(r.Height));
-        }
-        /// <summary>
-        /// Rounds a floating-point <see cref="SizeF"/> structure to an integer <see cref="Size"/> using <see cref="System.Math.Round(double)"/>.
-        /// </summary>
-        /// <param name="sizeF"></param>
-        /// <returns></returns>
-        public static Size RoundPoints(SizeF sizeF) {
-            return new Size((int)Math.Round(sizeF.Width), (int)Math.Round(sizeF.Height));
-        }
-
-        /// <summary>
-        /// Creates a rectangle of size <paramref name="size"/> with a center matching that of <paramref name="bounds"/>. No rounding is performed.
-        /// </summary>
-        /// <returns></returns>
-        public static RectangleF CenterInside(SizeF size, RectangleF bounds) {
-            return new RectangleF(bounds.Width / 2 + bounds.X - (size.Width / 2), bounds.Height / 2 + bounds.Y - (size.Height / 2), size.Width, size.Height);
-        }
-    }
-
-    /// <summary>
-    /// Provides methods for copying streams.
-    /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public static class StreamUtils
-    {
-        /// <summary>
-        /// Copies the <paramref name="source"/> stream into a new <see cref="MemoryStream"/> instance.
-        /// </summary>
-        /// <param name="source">The stream to copy.</param>
-        /// <param name="entireStream"><c>true</c> to copy the entire stream if it is seekable; <c>false</c> to only copy the remaining data.</param>
-        /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required.</param>
-        /// <returns></returns>
-        public static MemoryStream CopyToMemoryStream(Stream source, bool entireStream, int chunkSize)
-        {
-            MemoryStream ms =
-                new MemoryStream(source.CanSeek ? ((int) source.Length + 8 - (entireStream ? 0 : (int) source.Position)) : chunkSize);
-            CopyToStream(source, ms, entireStream, chunkSize);
-            ms.Position = 0;
-            return ms;
-        }
-
-        /// <summary>
-        /// Copies the <paramref name="source"/> stream to the <paramref name="destination"/> stream.
-        /// </summary>
-        /// <param name="source">The stream to read from.</param>
-        /// <param name="destination">The stream to write to.</param>
-        /// <param name="entireStream"><c>true</c> to copy the entire stream if it is seekable; <c>false</c> to only copy the remaining data.</param>
-        /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required.</param>
-        public static void CopyToStream(Stream source, Stream destination, bool entireStream, int chunkSize)
-        {
-            if (entireStream && source.CanSeek) source.Seek(0, SeekOrigin.Begin);
-
-            if (source is MemoryStream && source.CanSeek)
-            {
-                try
-                {
-                    int pos = (int) source.Position;
-                    destination.Write(((MemoryStream) source).GetBuffer(), pos, (int) (source.Length - pos));
-                    return;
-                }
-                catch (UnauthorizedAccessException) //If we can't slice it, then we read it like a normal stream
-                {
-                }
-            }
-            if (destination is MemoryStream && source.CanSeek)
-            {
-                try
-                {
-                    int srcPos = (int) source.Position;
-                    int pos = (int) destination.Position;
-                    int length = (int) (source.Length - srcPos) + pos;
-                    destination.SetLength(length);
-
-                    var data = ((MemoryStream) destination).GetBuffer();
-                    while (pos < length)
-                    {
-                        pos += source.Read(data, pos, length - pos);
-                    }
-                    return;
-                }
-                catch (UnauthorizedAccessException) //If we can't write directly, fall back
-                {
-                }
-            }
-            int size = (source.CanSeek) ? Math.Min((int) (source.Length - source.Position), chunkSize) : chunkSize;
-            byte[] buffer = new byte[size];
-            int n;
-            do
-            {
-                n = source.Read(buffer, 0, buffer.Length);
-                destination.Write(buffer, 0, n);
-            } while (n != 0);
-        }
-    }
-
-    /// <summary>
-    /// How to resolve aspect ratio differences between the requested size and the original image's size.
-    /// </summary>
-    public enum FitMode {
-        /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered maximum values. The resulting image may be smaller to maintain its aspect ratio. The image may also be smaller if the source image is smaller.
-        /// </summary>
-        Max,
-        /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. Padding is used if there is an aspect ratio difference.
-        /// </summary>
-        Pad,
-        /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. Cropping is used if there is an aspect ratio difference.
-        /// </summary>
-        Crop,
-        /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. If there is an aspect ratio difference, the image is stretched.
-        /// </summary>
-        Stretch,
-    }
-
-    /// <summary>
-    /// Controls whether the image is allowed to upscale, downscale, both, or if only the canvas gets to be upscaled.
-    /// </summary>
-    public enum ScaleMode {
-        /// <summary>
-        /// Only downsample images, never enlarge. If an image is smaller than <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>, the image coordinates are used instead.
-        /// </summary>
-        Down,
-        /// <summary>
-        /// Upscales and downscales images according to <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>.
-        /// </summary>
-        Both,
-        /// <summary>
-        /// When the image is smaller than the requested size, padding is added instead of stretching the image.
-        /// </summary>
-        Canvas
-    }
-    /// <summary>
-    /// Specifies the encoding format. Auto-detection is not enabled.
-    /// </summary>
-    public enum OutputFormat {
-        /// <summary>
-        /// The JPEG file format.
-        /// </summary>
-        Jpg,
-        /// <summary>
-        /// The PNG file format.
-        /// </summary>
-        Png
     }
 }
