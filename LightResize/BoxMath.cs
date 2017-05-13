@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.ComponentModel;
 using System.Drawing;
 
 namespace LightResize
@@ -26,8 +25,7 @@ namespace LightResize
     /// <summary>
     /// Provides simple layout math.
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public class BoxMath
+    internal static class BoxMath
     {
         /// <summary>
         /// Scales <paramref name="inner"/> to fit inside <paramref name="bounding"/> while maintaining aspect ratio. Upscales and downscales.

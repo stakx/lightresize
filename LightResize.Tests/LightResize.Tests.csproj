@@ -9,10 +9,12 @@
     <Product>LightResize</Product>
     <Description></Description>
     <Copyright>Copyright © 2012 Imazen, 2017 stakx</Copyright>
+
+    <AppDesignerFolder>Properties</AppDesignerFolder>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\GlobalSuppressions.cs" Link="GlobalSuppressions.cs" />
+    <Compile Include="..\GlobalSuppressions.cs" Link="Properties\GlobalSuppressions.cs" />
   </ItemGroup>
 
   <ItemGroup>

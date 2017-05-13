@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -28,8 +27,7 @@ namespace LightResize
     /// <summary>
     /// Provides adjustable JPEG encoding and 32-bit PNG encoding methods.
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public class Encoding
+    internal static class Encoding
     {
         /// <summary>
         /// Looks up encoders by MIME type.

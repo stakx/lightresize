@@ -18,7 +18,6 @@
  */
 
 using System;
-using System.ComponentModel;
 using System.IO;
 
 namespace LightResize
@@ -26,8 +25,7 @@ namespace LightResize
     /// <summary>
     /// Provides methods for copying streams.
     /// </summary>
-    [EditorBrowsable(EditorBrowsableState.Advanced)]
-    public static class StreamUtils
+    internal static class StreamUtils
     {
         /// <summary>
         /// Copies the <paramref name="source"/> stream into a new <see cref="MemoryStream"/> instance.
