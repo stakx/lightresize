@@ -36,27 +36,44 @@ namespace LightResize
         /// </summary>
         /// <param name="mimeType">The MIME type to look up.</param>
         /// <returns>The <see cref="ImageCodecInfo"/> that matches the given MIME type, or <c>null</c> if no match was found.</returns>
-        public static ImageCodecInfo GetImageCodecInfo(string mimeType) {
+        public static ImageCodecInfo GetImageCodecInfo(string mimeType)
+        {
             var info = ImageCodecInfo.GetImageEncoders();
             foreach (var ici in info)
-                if (ici.MimeType.Equals(mimeType, StringComparison.OrdinalIgnoreCase)) return ici;
+            {
+                if (ici.MimeType.Equals(mimeType, StringComparison.OrdinalIgnoreCase))
+                {
+                    return ici;
+                }
+            }
 
             return null;
         }
+
         /// <summary>
         /// Saves the specified image to the specified stream using JPEG compression of the specified quality.
         /// </summary>
-        /// <param name="b"></param>
+        /// <param name="b">The bitmap image to save.</param>
+        /// <param name="target">The stream to write to.</param>
         /// <param name="quality">A number between 0 and 100. Defaults to 90 if passed a negative number. Numbers over 100 are truncated to 100. 90 is a *very* good setting.</param>
-        /// <param name="target"></param>
-        public static void SaveJpeg(Image b, Stream target, int quality) {
-            //Validate quality
-            if (quality < 0) quality = 90; //90 is a very good default to stick with.
-            if (quality > 100) quality = 100;
-            //http://msdn.microsoft.com/en-us/library/ms533844(VS.85).aspx
-            //Prepare paramater for encoder
-            using (var p = new EncoderParameters(1)) {
-                using (var ep = new EncoderParameter(System.Drawing.Imaging.Encoder.Quality, (long)quality)) {
+        public static void SaveJpeg(Image b, Stream target, int quality)
+        {
+            // Validate quality
+            if (quality < 0)
+            {
+                quality = 90; // 90 is a very good default to stick with.
+            }
+            else if (quality > 100)
+            {
+                quality = 100;
+            }
+
+            // http://msdn.microsoft.com/en-us/library/ms533844(VS.85).aspx
+            // Prepare parameter for encoder
+            using (var p = new EncoderParameters(1))
+            {
+                using (var ep = new EncoderParameter(Encoder.Quality, (long)quality))
+                {
                     p.Param[0] = ep;
                     b.Save(target, GetImageCodecInfo("image/jpeg"), p);
                 }
@@ -66,18 +83,23 @@ namespace LightResize
         /// <summary>
         /// Saves the image in PNG format. If the <see cref="Stream"/> denoted by <paramref name="target"/> is not seekable, a temporary <see cref="MemoryStream"/> will be used to buffer the image data into the stream.
         /// </summary>
-        /// <param name="img"></param>
-        /// <param name="target"></param>
-        public static void SavePng(Image img, Stream target) {
-            if (!target.CanSeek) {
-                //Write to an intermediate, seekable memory stream (PNG compression requires it)
-                using (var ms = new MemoryStream(4096)) {
+        /// <param name="img">The bitmap image to save.</param>
+        /// <param name="target">The stream to write to.</param>
+        public static void SavePng(Image img, Stream target)
+        {
+            if (!target.CanSeek)
+            {
+                // Write to an intermediate, seekable memory stream (PNG compression requires it)
+                using (var ms = new MemoryStream(4096))
+                {
                     img.Save(ms, ImageFormat.Png);
                     ms.WriteTo(target);
                 }
-            } else {
-                //image/png
-                //  The parameter list requires 0 bytes.
+            }
+            else
+            {
+                // image/png
+                // The parameter list requires 0 bytes.
                 img.Save(target, ImageFormat.Png);
             }
         }

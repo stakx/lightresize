@@ -35,11 +35,11 @@ namespace LightResize
         /// <param name="source">The stream to copy.</param>
         /// <param name="entireStream"><c>true</c> to copy the entire stream if it is seekable; <c>false</c> to only copy the remaining data.</param>
         /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required.</param>
-        /// <returns></returns>
+        /// <returns>A <see cref="MemoryStream"/> containing data from the original stream.</returns>
         public static MemoryStream CopyToMemoryStream(Stream source, bool entireStream, int chunkSize)
         {
             MemoryStream ms =
-                new MemoryStream(source.CanSeek ? ((int) source.Length + 8 - (entireStream ? 0 : (int) source.Position)) : chunkSize);
+                new MemoryStream(source.CanSeek ? ((int)source.Length + 8 - (entireStream ? 0 : (int)source.Position)) : chunkSize);
             CopyToStream(source, ms, entireStream, chunkSize);
             ms.Position = 0;
             return ms;
@@ -54,48 +54,57 @@ namespace LightResize
         /// <param name="chunkSize">The buffer size to use (in bytes) if a buffer is required.</param>
         public static void CopyToStream(Stream source, Stream destination, bool entireStream, int chunkSize)
         {
-            if (entireStream && source.CanSeek) source.Seek(0, SeekOrigin.Begin);
+            if (entireStream && source.CanSeek)
+            {
+                source.Seek(0, SeekOrigin.Begin);
+            }
 
             if (source is MemoryStream && source.CanSeek)
             {
                 try
                 {
-                    int pos = (int) source.Position;
-                    destination.Write(((MemoryStream) source).GetBuffer(), pos, (int) (source.Length - pos));
+                    int pos = (int)source.Position;
+                    destination.Write(((MemoryStream)source).GetBuffer(), pos, (int)(source.Length - pos));
                     return;
                 }
-                catch (UnauthorizedAccessException) //If we can't slice it, then we read it like a normal stream
+                catch (UnauthorizedAccessException)
                 {
+                    // If we can't slice it, then we read it like a normal stream
                 }
             }
+
             if (destination is MemoryStream && source.CanSeek)
             {
                 try
                 {
-                    int srcPos = (int) source.Position;
-                    int pos = (int) destination.Position;
-                    int length = (int) (source.Length - srcPos) + pos;
+                    int srcPos = (int)source.Position;
+                    int pos = (int)destination.Position;
+                    int length = (int)(source.Length - srcPos) + pos;
                     destination.SetLength(length);
 
-                    var data = ((MemoryStream) destination).GetBuffer();
+                    var data = ((MemoryStream)destination).GetBuffer();
                     while (pos < length)
                     {
                         pos += source.Read(data, pos, length - pos);
                     }
+
                     return;
                 }
-                catch (UnauthorizedAccessException) //If we can't write directly, fall back
+                catch (UnauthorizedAccessException)
                 {
+                    // If we can't write directly, fall back
                 }
             }
-            int size = (source.CanSeek) ? Math.Min((int) (source.Length - source.Position), chunkSize) : chunkSize;
+
+            int size = source.CanSeek ? Math.Min((int)(source.Length - source.Position), chunkSize) : chunkSize;
             byte[] buffer = new byte[size];
             int n;
             do
             {
                 n = source.Read(buffer, 0, buffer.Length);
                 destination.Write(buffer, 0, n);
-            } while (n != 0);
+            }
+            while (n != 0);
         }
     }
 }

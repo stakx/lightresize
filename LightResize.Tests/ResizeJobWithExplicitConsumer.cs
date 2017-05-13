@@ -8,7 +8,7 @@ namespace LightResize.Tests
     {
         public void Build(Stream source, JobOptions jobOptions, Action<Bitmap> consumer)
         {
-            base.Build(source, (bitmap, _) => consumer?.Invoke(bitmap), jobOptions);
+            Build(source, (bitmap, _) => consumer?.Invoke(bitmap), jobOptions);
         }
     }
 }

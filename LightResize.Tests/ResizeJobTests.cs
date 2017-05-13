@@ -9,8 +9,8 @@ using NUnit.Framework;
 namespace LightResize.Tests
 {
     [TestFixture]
-    public class ResizeJobTests {
-
+    public class ResizeJobTests
+    {
         [Test]
         [TestCase(default(JobOptions))]
         [TestCase(JobOptions.BufferEntireSourceStream)]
@@ -19,7 +19,7 @@ namespace LightResize.Tests
         [TestCase(JobOptions.LeaveSourceStreamOpen | JobOptions.RewindSourceStream)]
         public void Build_Succeeds_EvenWhenSourceStreamPositionNotAt0(JobOptions jobOptions)
         {
-            TestDelegate action = delegate
+            TestDelegate action = () =>
             {
                 using (var sourceStream = GetBitmapStream(100, 100))
                 using (var targetStream = new MemoryStream())
@@ -153,7 +153,7 @@ namespace LightResize.Tests
         [Test]
         public void Build_CannotWriteToNonExistentDirectory_WhenNotAskedToCreateIt()
         {
-            TestDelegate action = delegate
+            TestDelegate action = () =>
             {
                 using (var sourceStream = GetBitmapStream(100, 100))
                 using (var targetStream = new MemoryStream())
@@ -247,63 +247,82 @@ namespace LightResize.Tests
             }
         }
 
-        private Bitmap GetBitmap(int width, int height) {
+        private Bitmap GetBitmap(int width, int height)
+        {
             Bitmap b = new Bitmap(width, height);
-            using (Graphics g = Graphics.FromImage(b)) {
+            using (Graphics g = Graphics.FromImage(b))
+            {
                 g.DrawString("Hello!", new Font(FontFamily.GenericSansSerif, 1), new SolidBrush(Color.Beige), new PointF(0, 0));
                 g.Flush();
             }
+
             return b;
         }
 
-        private Stream GetBitmapStream(int width, int height) {
+        private Stream GetBitmapStream(int width, int height)
+        {
             MemoryStream ms = new MemoryStream(4096);
             using (var b = GetBitmap(width, height))
+            {
                 b.Save(ms, ImageFormat.Png);
+            }
+
             ms.Seek(0, SeekOrigin.Begin);
             return ms;
         }
 
-        /// <summary>
-        /// Allows an ResizeJob to be configured from a querystring-style string.
-        /// Supports width, height, quality, scale, mode, format, ignoreicc, but not matte.
-        /// </summary>
-        /// <param name="str"></param>
-        /// <returns></returns>
-        private ResizeJob Job(string str) {
-
+        // Allows an ResizeJob to be configured from a query string-style string.
+        // Supports `width`, `height`, `quality`, `scale`, `mode`, `format`, `ignoreicc`, but not `matte`.
+        private ResizeJob Job(string str)
+        {
             var nvc = HttpUtility.ParseQueryString(str);
 
             var j = new ResizeJob();
             j.Width = ParseInt(nvc, "width", j.Width);
             j.Height = ParseInt(nvc, "height", j.Height);
             j.JpegQuality = ParseInt(nvc, "quality", j.JpegQuality).Value;
-            if ("true".Equals(nvc["ignoreicc"], StringComparison.OrdinalIgnoreCase)) j.IgnoreIccProfile = true;
+            if ("true".Equals(nvc["ignoreicc"], StringComparison.OrdinalIgnoreCase))
+            {
+                j.IgnoreIccProfile = true;
+            }
 
             j.ScalingRules = ParseEnum<ScaleMode>(nvc, "scale", j.ScalingRules).Value;
             j.Mode = ParseEnum<FitMode>(nvc, "mode", j.Mode).Value;
             j.Format = ParseEnum<OutputFormat>(nvc, "format", j.Format).Value;
-            //Didn't parse color, too hard
+
+            /* Didn't parse color, too hard */
 
             return j;
         }
 
-        private T? ParseEnum<T>(NameValueCollection nvc, string key, T? def) where T : struct, IConvertible {
+        private T? ParseEnum<T>(NameValueCollection nvc, string key, T? def)
+            where T : struct, IConvertible
+        {
             string s = nvc[key];
-            if (!string.IsNullOrEmpty(s)){
+            if (!string.IsNullOrEmpty(s))
+            {
                 T temp;
-                if (Enum.TryParse<T>(s,out temp)) return temp;
-
+                if (Enum.TryParse<T>(s, out temp))
+                {
+                    return temp;
+                }
             }
+
             return def;
         }
 
-        private int? ParseInt(NameValueCollection nvc, string key, int? def) {
+        private int? ParseInt(NameValueCollection nvc, string key, int? def)
+        {
             string s = nvc[key];
-            if (!string.IsNullOrEmpty(s)){
+            if (!string.IsNullOrEmpty(s))
+            {
                 int temp;
-                if (int.TryParse(s,out temp)) return temp;
+                if (int.TryParse(s, out temp))
+                {
+                    return temp;
+                }
             }
+
             return def;
         }
     }
