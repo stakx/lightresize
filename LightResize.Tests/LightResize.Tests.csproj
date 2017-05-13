@@ -39,8 +39,4 @@
     <ProjectReference Include="..\LightResize\LightResize.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Web" />
-  </ItemGroup>
-
 </Project>
