@@ -27,7 +27,7 @@ namespace LightResize
         /// <summary>
         /// The JPEG file format.
         /// </summary>
-        Jpg,
+        Jpeg,
 
         /// <summary>
         /// The PNG file format.

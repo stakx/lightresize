@@ -27,7 +27,7 @@ namespace LightResize
         /// <summary>
         /// Only downsample images, never enlarge. If an image is smaller than <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>, the image coordinates are used instead.
         /// </summary>
-        Down,
+        DownscaleOnly,
 
         /// <summary>
         /// Upscales and downscales images according to <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>.
@@ -37,6 +37,6 @@ namespace LightResize
         /// <summary>
         /// When the image is smaller than the requested size, padding is added instead of stretching the image.
         /// </summary>
-        Canvas
+        UpscaleCanvas
     }
 }

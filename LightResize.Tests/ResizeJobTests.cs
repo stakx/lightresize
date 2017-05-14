@@ -208,7 +208,7 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = Stream.Null)
             {
-                var job = new ResizeJobWithExplicitConsumer { ScalingRules = ScaleMode.Down, Width = 200, Height = 200 };
+                var job = new ResizeJobWithExplicitConsumer { Scale = ScaleMode.DownscaleOnly, Width = 200, Height = 200 };
                 job.Build(sourceStream, default(JobOptions), (output) =>
                 {
                     Assert.AreEqual(output.Width, 100);
@@ -219,13 +219,13 @@ namespace LightResize.Tests
 
         [Test]
         [TestCase(ScaleMode.Both)]
-        [TestCase(ScaleMode.Canvas)]
-        public void Build_ProducesBitmapLargerThanOriginal_GivenScaleMode(ScaleMode scalingRules)
+        [TestCase(ScaleMode.UpscaleCanvas)]
+        public void Build_ProducesBitmapLargerThanOriginal_GivenScaleMode(ScaleMode scale)
         {
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = Stream.Null)
             {
-                var job = new ResizeJobWithExplicitConsumer { ScalingRules = scalingRules, Width = 200, Height = 200 };
+                var job = new ResizeJobWithExplicitConsumer { Scale = scale, Width = 200, Height = 200 };
                 job.Build(sourceStream, default(JobOptions), (output) =>
                 {
                     Assert.AreEqual(output.Width, 200);
@@ -235,9 +235,9 @@ namespace LightResize.Tests
         }
 
         [Test]
-        [TestCase(50, 50, OutputFormat.Jpg, 100)]
-        [TestCase(1, 1, OutputFormat.Jpg, 100)]
-        [TestCase(50, 50, OutputFormat.Jpg, -300)]
+        [TestCase(50, 50, OutputFormat.Jpeg, 100)]
+        [TestCase(1, 1, OutputFormat.Jpeg, 100)]
+        [TestCase(50, 50, OutputFormat.Jpeg, -300)]
         [TestCase(50, 50, OutputFormat.Png)]
         public void EncodeImage(int width, int height, OutputFormat format, int? jpegQuality = null)
         {

@@ -34,17 +34,18 @@ namespace LightResize
         /// Initializes a new instance of the <see cref="ResizeJob"/> class.
         /// </summary>
         /// <param name="mode">The initial value for the <see cref="Mode"/> property. Defaults to <see cref="FitMode.Max"/>.</param>
-        /// <param name="scalingRules">The initial value for the <see cref="ScalingRules"/> property. Defaults to <see cref="ScaleMode.Down"/>.</param>
-        /// <param name="ignoreIccProfile">The initial value for the <see cref="IgnoreIccProfile"/> property. Defaults to <c>false</c>.</param>
-        /// <param name="format">The initial value for the <see cref="Format"/> property. Defaults to <see cref="OutputFormat.Jpg"/>.</param>
+        /// <param name="scale">The initial value for the <see cref="Scale"/> property. Defaults to <see cref="ScaleMode.DownscaleOnly"/>.</param>
+        /// <param name="ignoreICC">The initial value for the <see cref="IgnoreICC"/> property. Defaults to <c>false</c>.</param>
+        /// <param name="format">The initial value for the <see cref="Format"/> property. Defaults to <see cref="OutputFormat.Jpeg"/>.</param>
         /// <param name="jpegQuality">The initial value for the <see cref="JpegQuality"/> property. Defaults to 90.</param>
-        public ResizeJob(FitMode mode = FitMode.Max, ScaleMode scalingRules = ScaleMode.Down, bool ignoreIccProfile = false, OutputFormat format = OutputFormat.Jpg, int jpegQuality = 90)
+        public ResizeJob(FitMode mode = FitMode.Max, ScaleMode scale = ScaleMode.DownscaleOnly, bool ignoreICC = false, OutputFormat format = OutputFormat.Jpeg, int jpegQuality = 90)
         {
             Mode = mode;
-            ScalingRules = scalingRules;
+            Scale = scale;
             JpegQuality = jpegQuality;
-            IgnoreIccProfile = ignoreIccProfile;
+            IgnoreICC = ignoreICC;
             Format = format;
+            BackgroundColor = Color.Transparent;
         }
 
         /// <summary>
@@ -70,12 +71,12 @@ namespace LightResize
         public FitMode Mode { get; set; }
 
         /// <summary>
-        /// Gets or sets whether upscaling be permitted. Defaults to <see cref="ScaleMode.Down"/> (i.e. downscaling only).
+        /// Gets or sets whether upscaling is permitted. Defaults to <see cref="ScaleMode.DownscaleOnly"/>.
         /// </summary>
-        public ScaleMode ScalingRules { get; set; }
+        public ScaleMode Scale { get; set; }
 
         /// <summary>
-        /// Gets or sets the encoding format to use when writing the resized image to the destination stream. Defaults to <see cref="OutputFormat.Jpg"/>.
+        /// Gets or sets the encoding format to use when writing the resized image to the destination stream. Defaults to <see cref="OutputFormat.Jpeg"/>.
         /// </summary>
         public OutputFormat Format { get; set; }
 
@@ -85,14 +86,14 @@ namespace LightResize
         public int JpegQuality { get; set; }
 
         /// <summary>
-        /// Gets or sets the background color to apply. <c>null</c> denotes transparency. <see cref="Color.White"/> will be used if the encoding format (<see cref="Format"/>) is <see cref="OutputFormat.Jpg"/> and this is unspecified.
+        /// Gets or sets the background color to apply. Defaults to <see cref="Color.Transparent"/>. If the output format (<see cref="Format"/>) is <see cref="OutputFormat.Jpeg"/> (which does not support transparency), <see cref="Color.White"/> will be used instead of <see cref="Color.Transparent"/>.
         /// </summary>
-        public Color? Matte { get; set; }
+        public Color BackgroundColor { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the ICC profile will be ignored instead of being applied.
         /// </summary>
-        public bool IgnoreIccProfile { get; set; }
+        public bool IgnoreICC { get; set; }
 
         /// <summary>
         /// Gets or sets the source bitmap.
@@ -248,7 +249,7 @@ namespace LightResize
                     }
 
                     // Load bitmap
-                    Source = new Bitmap(UnderlyingStream, !IgnoreIccProfile);
+                    Source = new Bitmap(UnderlyingStream, !IgnoreICC);
 
                     // Use size
                     OriginalSize = Source.Size;
@@ -390,13 +391,13 @@ namespace LightResize
             }
 
             // Now, unless upscaling is enabled, ensure the image is no larger than it was originally
-            if (ScalingRules != ScaleMode.Both && BoxMath.FitsInside(OriginalSize, targetSize))
+            if (Scale != ScaleMode.Both && BoxMath.FitsInside(OriginalSize, targetSize))
             {
                 targetSize = OriginalSize;
                 CopyRect = originalRect;
 
                 // And reset the canvas size, unless canvas upscaling is enabled.
-                if (ScalingRules != ScaleMode.Canvas)
+                if (Scale != ScaleMode.UpscaleCanvas)
                 {
                     canvasSize = targetSize;
                 }
@@ -442,7 +443,7 @@ namespace LightResize
                 g.CompositingMode = CompositingMode.SourceOver;
 
                 // If the image doesn't support transparency, we need to fill the background color now.
-                var background = Matte ?? Color.Transparent;
+                var background = BackgroundColor;
 
                 // Find out if we can safely know that nothing will be showing through or around the image.
                 var nothingToShow = (Source.PixelFormat == PixelFormat.Format24bppRgb ||
@@ -452,7 +453,7 @@ namespace LightResize
                                       && TargetRect.X == 0 && TargetRect.Y == 0;
 
                 // Set the background to white if the background will be showing and the destination format doesn't support transparency.
-                if (background == Color.Transparent && Format == OutputFormat.Jpg & !nothingToShow)
+                if (background == Color.Transparent && Format == OutputFormat.Jpeg & !nothingToShow)
                 {
                     background = Color.White;
                 }
@@ -488,7 +489,7 @@ namespace LightResize
         /// <param name="target">The stream to write to.</param>
         protected virtual void Encode(Stream target)
         {
-            if (Format == OutputFormat.Jpg)
+            if (Format == OutputFormat.Jpeg)
             {
                 Encoding.SaveJpeg(Dest, target, JpegQuality);
             }
