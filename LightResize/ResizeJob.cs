@@ -26,9 +26,9 @@ using System.IO;
 namespace LightResize
 {
     /// <summary>
-    /// Encapsulates a resizing operation. Very limited compared to ImageResizer, absolutely no ASP.NET support.
+    /// Contains methods to resize images. Very limited compared to ImageResizer, absolutely no ASP.NET support.
     /// </summary>
-    public class ResizeJob
+    public static class ResizeJob
     {
         /// <summary>
         /// Allows callers to handle the encoding/usage phase.
@@ -38,48 +38,13 @@ namespace LightResize
         protected delegate void BitmapConsumer(Bitmap bitmap, JobOptions options);
 
         /// <summary>
-        /// Gets or sets the source bitmap.
-        /// </summary>
-        protected Image Source { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="Stream"/> underlying the source bitmap. (This stream cannot be disposed before the source bitmap.)
-        /// </summary>
-        protected Stream UnderlyingStream { get; set; }
-
-        /// <summary>
-        /// Gets or sets the dimensions of the source image.
-        /// </summary>
-        protected Size OriginalSize { get; set; }
-
-        /// <summary>
-        /// Gets or sets which part of the source image to copy.
-        /// </summary>
-        protected RectangleF CopyRect { get; set; }
-
-        /// <summary>
-        /// Gets or sets where on the target canvas to render the source image.
-        /// </summary>
-        protected RectangleF TargetRect { get; set; }
-
-        /// <summary>
-        /// Gets or sets the size to create the target image.
-        /// </summary>
-        protected Size DestSize { get; set; }
-
-        /// <summary>
-        /// Gets or sets the <see cref="Bitmap"/> object the target image is rendered to before encoding.
-        /// </summary>
-        protected Bitmap Dest { get; set; }
-
-        /// <summary>
         /// Performs the image resize operation by reading from a file and writing to a file.
         /// </summary>
         /// <param name="sourcePath">The path of the file to read from.</param>
         /// <param name="destinationPath">The path of the file to write to.</param>
         /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
-        public void Build(string sourcePath, string destinationPath, JobOptions options, Instructions instructions)
+        public static void Build(string sourcePath, string destinationPath, JobOptions options, Instructions instructions)
         {
             if (sourcePath == destinationPath)
             {
@@ -96,7 +61,7 @@ namespace LightResize
         /// <param name="destination">The stream to write to.</param>
         /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
-        public void Build(string sourcePath, Stream destination, JobOptions options, Instructions instructions)
+        public static void Build(string sourcePath, Stream destination, JobOptions options, Instructions instructions)
         {
             Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destination, options, instructions);
         }
@@ -108,7 +73,7 @@ namespace LightResize
         /// <param name="destinationPath">The path of the file to write to.</param>
         /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
-        public void Build(Stream source, string destinationPath, JobOptions options, Instructions instructions)
+        public static void Build(Stream source, string destinationPath, JobOptions options, Instructions instructions)
         {
             var createParents = (options & JobOptions.CreateParentDirectory) != 0;
             if (createParents)
@@ -126,7 +91,7 @@ namespace LightResize
                 {
                     using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
                     {
-                        Encode(fs, instructions);
+                        Encode(b, fs, instructions);
                     }
                 },
                 options,
@@ -143,7 +108,7 @@ namespace LightResize
         /// <remarks>
         /// Ensure that the first stream you open will be safely closed if the second stream fails to open! This means a <c>using()</c> or <c>try</c>/<c>finally</c> clause.
         /// </remarks>
-        public void Build(Stream source, Stream destination, JobOptions options, Instructions instructions)
+        public static void Build(Stream source, Stream destination, JobOptions options, Instructions instructions)
         {
             Build(
                 source,
@@ -152,7 +117,7 @@ namespace LightResize
                     try
                     {
                         // Encode from temp bitmap to target stream
-                        Encode(destination, instructions);
+                        Encode(b, destination, instructions);
                     }
                     finally
                     {
@@ -174,7 +139,7 @@ namespace LightResize
         /// <param name="consumer">The <see cref="BitmapConsumer"/> that will receive the resized <see cref="Bitmap"/> for further processing (e.g. writing to a destination).</param>
         /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
-        protected void Build(Stream source, BitmapConsumer consumer, JobOptions options, Instructions instructions)
+        private static void Build(Stream source, BitmapConsumer consumer, JobOptions options, Instructions instructions)
         {
             var leaveSourceStreamOpen = (options & JobOptions.LeaveSourceStreamOpen) != 0 ||
                                  (options & JobOptions.RewindSourceStream) != 0;
@@ -183,12 +148,15 @@ namespace LightResize
             var originalPosition = (options & JobOptions.RewindSourceStream) != 0 ? source.Position : -1;
             var preserveTemp = (options & JobOptions.PreserveTargetBitmap) != 0;
 
+            Bitmap destBitmap = null;
             try
             {
+                Stream underlyingStream = null;
+                Bitmap sourceBitmap = null;
                 try
                 {
                     // Buffer source stream if requested
-                    UnderlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(source, true, 0x1000) : source;
+                    underlyingStream = bufferSource ? StreamUtils.CopyToMemoryStream(source, true, 0x1000) : source;
 
                     // Allow early disposal (enables same-file edits)
                     if (bufferSource && !leaveSourceStreamOpen)
@@ -198,41 +166,41 @@ namespace LightResize
                     }
 
                     // Load bitmap
-                    Source = new Bitmap(UnderlyingStream, !instructions.IgnoreICC);
+                    sourceBitmap = new Bitmap(underlyingStream, !instructions.IgnoreICC);
 
                     // Use size
-                    OriginalSize = Source.Size;
+                    var originalSize = sourceBitmap.Size;
 
                     // Do math
-                    Layout(instructions);
+                    Layout(originalSize, instructions, out RectangleF copyRect, out Size destSize, out RectangleF targetRect);
 
-                    // Render to 'Dest'
-                    Render(instructions);
+                    // Render to 'destBitmap'
+                    Render(sourceBitmap, copyRect, destSize, targetRect, instructions, out destBitmap);
                 }
                 finally
                 {
                     try
                     {
                         // Dispose loaded bitmap instance
-                        if (Source != null)
+                        if (sourceBitmap != null)
                         {
-                            Source.Dispose();
+                            sourceBitmap.Dispose();
                         }
                     }
                     finally
                     {
-                        Source = null; // Ensure reference is null
+                        sourceBitmap = null; // Ensure reference is null
                         try
                         {
                             // Dispose buffer
-                            if (UnderlyingStream != null && source != UnderlyingStream)
+                            if (underlyingStream != null && source != underlyingStream)
                             {
-                                UnderlyingStream.Dispose();
+                                underlyingStream.Dispose();
                             }
                         }
                         finally
                         {
-                            UnderlyingStream = null; // Ensure reference is null
+                            underlyingStream = null; // Ensure reference is null
 
                             // Dispose source stream or restore its position
                             if (!leaveSourceStreamOpen && source != null)
@@ -248,27 +216,24 @@ namespace LightResize
                 }
 
                 // Fire callback to write to disk or use Bitmap instance directly
-                consumer(Dest, options);
+                consumer(destBitmap, options);
             }
             finally
             {
                 // Temporary bitmap must be disposed
-                if (!preserveTemp && Dest != null)
+                if (!preserveTemp && destBitmap != null)
                 {
-                    Dest.Dispose();
-                    Dest = null;
+                    destBitmap.Dispose();
+                    destBitmap = null;
                 }
             }
         }
 
-        /// <summary>
-        /// Layout: size and cropping constraints are calculated here.
-        /// </summary>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        protected virtual void Layout(Instructions instructions)
+        // Layout: size and cropping constraints are calculated here.
+        private static void Layout(Size originalSize, Instructions instructions, out RectangleF copyRect, out Size destSize, out RectangleF targetRect)
         {
             // Aspect ratio of the source image
-            var imageRatio = (double)OriginalSize.Width / (double)OriginalSize.Height;
+            var imageRatio = (double)originalSize.Width / (double)originalSize.Height;
 
             // Target image size
             SizeF targetSize;
@@ -276,9 +241,9 @@ namespace LightResize
             // Target canvas size
             SizeF canvasSize;
 
-            var originalRect = new RectangleF(0, 0, OriginalSize.Width, OriginalSize.Height);
+            var originalRect = new RectangleF(0, 0, originalSize.Width, originalSize.Height);
 
-            CopyRect = originalRect;
+            copyRect = originalRect;
 
             /* Normalize */
 
@@ -311,13 +276,13 @@ namespace LightResize
                 if (mode == FitMode.Max)
                 {
                     // FitMode.Max
-                    canvasSize = targetSize = BoxMath.ScaleInside(CopyRect.Size, bounds);
+                    canvasSize = targetSize = BoxMath.ScaleInside(copyRect.Size, bounds);
                 }
                 else if (mode == FitMode.Pad)
                 {
                     // FitMode.Pad
                     canvasSize = bounds;
-                    targetSize = BoxMath.ScaleInside(CopyRect.Size, canvasSize);
+                    targetSize = BoxMath.ScaleInside(copyRect.Size, canvasSize);
                 }
                 else if (mode == FitMode.Crop)
                 {
@@ -326,10 +291,10 @@ namespace LightResize
                     canvasSize = targetSize = bounds;
 
                     // Determine the size of the area we are copying
-                    var sourceSize = BoxMath.RoundPoints(BoxMath.ScaleInside(canvasSize, CopyRect.Size));
+                    var sourceSize = BoxMath.RoundPoints(BoxMath.ScaleInside(canvasSize, copyRect.Size));
 
                     // Center the portion we are copying within the manualCropSize
-                    CopyRect = BoxMath.ToRectangle(BoxMath.CenterInside(sourceSize, CopyRect));
+                    copyRect = BoxMath.ToRectangle(BoxMath.CenterInside(sourceSize, copyRect));
                 }
                 else
                 {
@@ -340,15 +305,15 @@ namespace LightResize
             else
             {
                 // No dimensions specified, no fit mode needed. Use original dimensions
-                canvasSize = targetSize = OriginalSize;
+                canvasSize = targetSize = originalSize;
             }
 
             // Now, unless upscaling is enabled, ensure the image is no larger than it was originally
             var scale = instructions.Scale;
-            if (scale != ScaleMode.Both && BoxMath.FitsInside(OriginalSize, targetSize))
+            if (scale != ScaleMode.Both && BoxMath.FitsInside(originalSize, targetSize))
             {
-                targetSize = OriginalSize;
-                CopyRect = originalRect;
+                targetSize = originalSize;
+                copyRect = originalRect;
 
                 // And reset the canvas size, unless canvas upscaling is enabled.
                 if (scale != ScaleMode.UpscaleCanvas)
@@ -363,24 +328,19 @@ namespace LightResize
             targetSize.Width = Math.Max(1, (float)Math.Round(targetSize.Width));
             targetSize.Height = Math.Max(1, (float)Math.Round(targetSize.Height));
 
-            DestSize = new Size((int)canvasSize.Width, (int)canvasSize.Height);
-            TargetRect = BoxMath.CenterInside(targetSize, new RectangleF(0, 0, canvasSize.Width, canvasSize.Height));
+            destSize = new Size((int)canvasSize.Width, (int)canvasSize.Height);
+            targetRect = BoxMath.CenterInside(targetSize, new RectangleF(0, 0, canvasSize.Width, canvasSize.Height));
         }
 
-        /// <summary>
-        /// Performs the actual bitmap resize operation.
-        /// </summary>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        /// <remarks>
-        /// Only rendering occurs here. See <see cref="Layout"/> for the math part of things. Neither <see cref="Dest"/> nor <see cref="Source"/> are disposed here!
-        /// </remarks>
-        protected virtual void Render(Instructions instructions)
+        // Performs the actual bitmap resize operation.
+        // Only rendering occurs here. See 'Layout' for the math part of things. Neither 'dest' nor 'source' are disposed here!
+        private static void Render(Bitmap source, RectangleF copyRect, Size destSize, RectangleF targetRect, Instructions instructions, out Bitmap dest)
         {
             // Create new bitmap using calculated size.
-            Dest = new Bitmap(DestSize.Width, DestSize.Height, PixelFormat.Format32bppArgb);
+            dest = new Bitmap(destSize.Width, destSize.Height, PixelFormat.Format32bppArgb);
 
             // Create graphics handle
-            using (var g = Graphics.FromImage(Dest))
+            using (var g = Graphics.FromImage(dest))
             {
                 // HQ bi-cubic is 2 pass. It's only 30% slower than low quality, why not have HQ results?
                 g.InterpolationMode = InterpolationMode.HighQualityBicubic;
@@ -401,11 +361,11 @@ namespace LightResize
                 var background = instructions.BackgroundColor;
 
                 // Find out if we can safely know that nothing will be showing through or around the image.
-                var nothingToShow = (Source.PixelFormat == PixelFormat.Format24bppRgb ||
-                                       Source.PixelFormat == PixelFormat.Format32bppRgb ||
-                                       Source.PixelFormat == PixelFormat.Format48bppRgb) &&
-                                      TargetRect.Width == DestSize.Width && TargetRect.Height == DestSize.Height
-                                      && TargetRect.X == 0 && TargetRect.Y == 0;
+                var nothingToShow = (source.PixelFormat == PixelFormat.Format24bppRgb ||
+                                       source.PixelFormat == PixelFormat.Format32bppRgb ||
+                                       source.PixelFormat == PixelFormat.Format48bppRgb) &&
+                                      targetRect.Width == destSize.Width && targetRect.Height == destSize.Height
+                                      && targetRect.X == 0 && targetRect.Y == 0;
 
                 // Set the background to white if the background will be showing and the destination format doesn't support transparency.
                 if (background == Color.Transparent && instructions.Format == OutputFormat.Jpeg & !nothingToShow)
@@ -426,33 +386,29 @@ namespace LightResize
 
                     // Make poly from rectF
                     var r = new PointF[3];
-                    r[0] = TargetRect.Location;
-                    r[1] = new PointF(TargetRect.Right, TargetRect.Top);
-                    r[2] = new PointF(TargetRect.Left, TargetRect.Bottom);
+                    r[0] = targetRect.Location;
+                    r[1] = new PointF(targetRect.Right, targetRect.Top);
+                    r[2] = new PointF(targetRect.Left, targetRect.Bottom);
 
                     // Render!
-                    g.DrawImage(Source, r, CopyRect, GraphicsUnit.Pixel, ia);
+                    g.DrawImage(source, r, copyRect, GraphicsUnit.Pixel, ia);
                 }
 
                 g.Flush(FlushIntention.Flush);
             }
         }
 
-        /// <summary>
-        /// Encodes <see cref="Dest"/>.
-        /// </summary>
-        /// <param name="target">The stream to write to.</param>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        protected virtual void Encode(Stream target, Instructions instructions)
+        // Encodes 'dest'.
+        private static void Encode(Bitmap dest, Stream target, Instructions instructions)
         {
             var format = instructions.Format;
             if (format == OutputFormat.Jpeg)
             {
-                Encoding.SaveJpeg(Dest, target, instructions.JpegQuality);
+                Encoding.SaveJpeg(dest, target, instructions.JpegQuality);
             }
             else if (format == OutputFormat.Png)
             {
-                Encoding.SavePng(Dest, target);
+                Encoding.SavePng(dest, target);
             }
         }
     }
