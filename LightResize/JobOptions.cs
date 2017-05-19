@@ -22,39 +22,39 @@ using System;
 namespace LightResize
 {
     /// <summary>
-    /// Instructs <see cref="ResizeJob"/> how to handle I/O (e.g. whether to buffer, dispose, and/or rewind the source stream, or whether to dispose the destination stream).
+    /// Instructs <see cref="ImageBuilder"/> how to handle I/O (e.g. whether to buffer, dispose, and/or rewind the source stream, or whether to dispose the destination stream).
     /// </summary>
     [Flags]
     public enum JobOptions
     {
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to leave the source stream open even after it is no longer needed for the job.
+        /// Instructs <see cref="ImageBuilder"/> to leave the source stream open even after it is no longer needed for the job.
         /// </summary>
         LeaveSourceStreamOpen = 1,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to rewind the source stream to its original position after it has been used. (This is useful when reusing a stream or <c>HttpFileUpload</c>.)
+        /// Instructs <see cref="ImageBuilder"/> to rewind the source stream to its original position after it has been used. (This is useful when reusing a stream or <c>HttpFileUpload</c>.)
         /// Implies <see cref="LeaveSourceStreamOpen"/>.
         /// </summary>
         RewindSourceStream = 2,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to leave the target stream open after it is finished writing. Make sure you close it externally!
+        /// Instructs <see cref="ImageBuilder"/> to leave the target stream open after it is finished writing. Make sure you close it externally!
         /// </summary>
         LeaveTargetStreamOpen = 4,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to preserve the target bitmap. (This will cause a memory leak unless disposed externally).
+        /// Instructs <see cref="ImageBuilder"/> to preserve the target bitmap. (This will cause a memory leak unless disposed externally).
         /// </summary>
         PreserveTargetBitmap = 8,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to create any needed parent folder levels when a file path is specified as the destination.
+        /// Instructs <see cref="ImageBuilder"/> to create any needed parent folder levels when a file path is specified as the destination.
         /// </summary>
         CreateParentDirectory = 16,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to copy the source stream into a memory buffer so that it can be closed earlier. (This is required if you are writing to the same file that you are reading from.)
+        /// Instructs <see cref="ImageBuilder"/> to copy the source stream into a memory buffer so that it can be closed earlier. (This is required if you are writing to the same file that you are reading from.)
         /// </summary>
         BufferEntireSourceStream = 32,
     }

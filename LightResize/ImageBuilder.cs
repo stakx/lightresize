@@ -26,15 +26,15 @@ using System.IO;
 namespace LightResize
 {
     /// <summary>
-    /// Contains methods to resize images. Very limited compared to ImageResizer, absolutely no ASP.NET support.
+    /// Provides methods for generating resized images.
     /// </summary>
-    public static class ResizeJob
+    public static class ImageBuilder
     {
         /// <summary>
         /// Allows callers to handle the encoding/usage phase.
         /// </summary>
         /// <param name="bitmap">The resized bitmap image.</param>
-        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         protected delegate void BitmapConsumer(Bitmap bitmap, JobOptions options);
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace LightResize
         /// </summary>
         /// <param name="sourcePath">The path of the file to read from.</param>
         /// <param name="destinationPath">The path of the file to write to.</param>
-        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
         public static void Build(string sourcePath, string destinationPath, JobOptions options, Instructions instructions)
         {
@@ -59,7 +59,7 @@ namespace LightResize
         /// </summary>
         /// <param name="sourcePath">The path of the file to read from.</param>
         /// <param name="destination">The stream to write to.</param>
-        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
         public static void Build(string sourcePath, Stream destination, JobOptions options, Instructions instructions)
         {
@@ -71,7 +71,7 @@ namespace LightResize
         /// </summary>
         /// <param name="source">The stream to read from.</param>
         /// <param name="destinationPath">The path of the file to write to.</param>
-        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
         public static void Build(Stream source, string destinationPath, JobOptions options, Instructions instructions)
         {
@@ -103,7 +103,7 @@ namespace LightResize
         /// </summary>
         /// <param name="source">The stream to read from.</param>
         /// <param name="destination">The stream to write to.</param>
-        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
         /// <remarks>
         /// Ensure that the first stream you open will be safely closed if the second stream fails to open! This means a <c>using()</c> or <c>try</c>/<c>finally</c> clause.
@@ -137,7 +137,7 @@ namespace LightResize
         /// </summary>
         /// <param name="source">The <see cref="Stream"/> to read from.</param>
         /// <param name="consumer">The <see cref="BitmapConsumer"/> that will receive the resized <see cref="Bitmap"/> for further processing (e.g. writing to a destination).</param>
-        /// <param name="options">Specifies how <see cref="ResizeJob"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
+        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
         /// <param name="instructions">Specifies how to resize the source image.</param>
         private static void Build(Stream source, BitmapConsumer consumer, JobOptions options, Instructions instructions)
         {
