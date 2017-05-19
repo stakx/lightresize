@@ -25,12 +25,12 @@ namespace LightResize
     public enum ScaleMode
     {
         /// <summary>
-        /// Only downsample images, never enlarge. If an image is smaller than <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>, the image coordinates are used instead.
+        /// Only downsample images, never enlarge. If an image is smaller than <see cref="Instructions.Width"/> and <see cref="Instructions.Height"/>, the image coordinates are used instead.
         /// </summary>
         DownscaleOnly,
 
         /// <summary>
-        /// Upscales and downscales images according to <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/>.
+        /// Upscales and downscales images according to <see cref="Instructions.Width"/> and <see cref="Instructions.Height"/>.
         /// </summary>
         Both,
 

@@ -25,7 +25,8 @@ namespace LightResize.Tests
                 using (var targetStream = new MemoryStream())
                 {
                     sourceStream.Seek(17, SeekOrigin.Begin);
-                    new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                    var instructions = new Instructions { Width = 50 };
+                    new ResizeJob().Build(sourceStream, targetStream, jobOptions, instructions);
                 }
             };
             Assert.DoesNotThrow(action);
@@ -40,7 +41,8 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = new MemoryStream())
             {
-                new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                var instructions = new Instructions { Width = 50 };
+                new ResizeJob().Build(sourceStream, targetStream, jobOptions, instructions);
                 Assert.True(sourceStream.CanRead);
             }
         }
@@ -56,7 +58,8 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = new MemoryStream())
             {
-                new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                var instructions = new Instructions { Width = 50 };
+                new ResizeJob().Build(sourceStream, targetStream, jobOptions, instructions);
                 Assert.False(sourceStream.CanRead);
             }
         }
@@ -68,7 +71,8 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = new MemoryStream())
             {
-                new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                var instructions = new Instructions { Width = 50 };
+                new ResizeJob().Build(sourceStream, targetStream, jobOptions, instructions);
                 Assert.True(targetStream.CanRead);
             }
         }
@@ -85,7 +89,8 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = new MemoryStream())
             {
-                new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                var instructions = new Instructions { Width = 50 };
+                new ResizeJob().Build(sourceStream, targetStream, jobOptions, instructions);
                 Assert.False(targetStream.CanRead);
             }
         }
@@ -100,7 +105,8 @@ namespace LightResize.Tests
             {
                 sourceStream.Seek(1, SeekOrigin.Begin);
                 var originalPosition = sourceStream.Position;
-                new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions);
+                var instructions = new Instructions { Width = 50 };
+                new ResizeJob().Build(sourceStream, targetStream, jobOptions, instructions);
                 Assume.That(sourceStream.CanSeek);
                 Assert.AreEqual(originalPosition, sourceStream.Position);
             }
@@ -120,7 +126,8 @@ namespace LightResize.Tests
             {
                 sourceStream.Seek(1, SeekOrigin.Begin);
                 var originalPosition = sourceStream.Position;
-                new ResizeJob { Width = 50 }.Build(sourceStream, targetStream, jobOptions | JobOptions.LeaveSourceStreamOpen);
+                var instructions = new Instructions { Width = 50 };
+                new ResizeJob().Build(sourceStream, targetStream, jobOptions | JobOptions.LeaveSourceStreamOpen, instructions);
                 Assume.That(sourceStream.CanSeek);
                 Assert.AreNotEqual(originalPosition, sourceStream.Position);
             }
@@ -139,7 +146,8 @@ namespace LightResize.Tests
                 var targetPath = Path.Combine(parentDirectory, "test.jpg");
                 try
                 {
-                    new ResizeJob { Width = 50 }.Build(sourceStream, targetPath, JobOptions.CreateParentDirectory);
+                    var instructions = new Instructions { Width = 50 };
+                    new ResizeJob().Build(sourceStream, targetPath, JobOptions.CreateParentDirectory, instructions);
                     Assert.True(Directory.Exists(parentDirectory));
                 }
                 finally
@@ -163,7 +171,8 @@ namespace LightResize.Tests
                     var parentDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
                     Assume.That(!Directory.Exists(parentDirectory));
                     var targetPath = Path.Combine(parentDirectory, "test.jpg");
-                    new ResizeJob { Width = 50 }.Build(sourceStream, targetPath, (JobOptions)0);
+                    var instructions = new Instructions { Width = 50 };
+                    new ResizeJob().Build(sourceStream, targetPath, default(JobOptions), instructions);
                 }
             };
             Assert.Throws<DirectoryNotFoundException>(action);
@@ -178,12 +187,16 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = Stream.Null)
             {
-                var job = new ResizeJobWithExplicitConsumer { Mode = mode, Width = 12, Height = 34 };
-                job.Build(sourceStream, default(JobOptions), (output) =>
-                {
-                    Assert.AreEqual(output.Width, 12);
-                    Assert.AreEqual(output.Height, 34);
-                });
+                var instructions = new Instructions { Mode = mode, Width = 12, Height = 34 };
+                new ResizeJobWithExplicitConsumer().Build(
+                    sourceStream,
+                    (output) =>
+                    {
+                        Assert.AreEqual(output.Width, 12);
+                        Assert.AreEqual(output.Height, 34);
+                    },
+                    default(JobOptions),
+                    instructions);
             }
         }
 
@@ -193,12 +206,16 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 66))
             using (var targetStream = Stream.Null)
             {
-                var job = new ResizeJobWithExplicitConsumer { Mode = FitMode.Max, Width = 12, Height = 34 };
-                job.Build(sourceStream, default(JobOptions), (output) =>
-                {
-                    Assert.AreEqual(output.Width, 12);
-                    Assert.AreEqual(output.Height, 8);
-                });
+                var instructions = new Instructions { Mode = FitMode.Max, Width = 12, Height = 34 };
+                new ResizeJobWithExplicitConsumer().Build(
+                    sourceStream,
+                    (output) =>
+                    {
+                        Assert.AreEqual(output.Width, 12);
+                        Assert.AreEqual(output.Height, 8);
+                    },
+                    default(JobOptions),
+                    instructions);
             }
         }
 
@@ -208,12 +225,16 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = Stream.Null)
             {
-                var job = new ResizeJobWithExplicitConsumer { Scale = ScaleMode.DownscaleOnly, Width = 200, Height = 200 };
-                job.Build(sourceStream, default(JobOptions), (output) =>
-                {
-                    Assert.AreEqual(output.Width, 100);
-                    Assert.AreEqual(output.Height, 100);
-                });
+                var instructions = new Instructions { Scale = ScaleMode.DownscaleOnly, Width = 200, Height = 200 };
+                new ResizeJobWithExplicitConsumer().Build(
+                    sourceStream,
+                    (output) =>
+                    {
+                        Assert.AreEqual(output.Width, 100);
+                        Assert.AreEqual(output.Height, 100);
+                    },
+                    default(JobOptions),
+                    instructions);
             }
         }
 
@@ -225,12 +246,16 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 100))
             using (var targetStream = Stream.Null)
             {
-                var job = new ResizeJobWithExplicitConsumer { Scale = scale, Width = 200, Height = 200 };
-                job.Build(sourceStream, default(JobOptions), (output) =>
-                {
-                    Assert.AreEqual(output.Width, 200);
-                    Assert.AreEqual(output.Height, 200);
-                });
+                var instructions = new Instructions { Scale = scale, Width = 200, Height = 200 };
+                new ResizeJobWithExplicitConsumer().Build(
+                    sourceStream,
+                    (output) =>
+                    {
+                        Assert.AreEqual(output.Width, 200);
+                        Assert.AreEqual(output.Height, 200);
+                    },
+                    default(JobOptions),
+                    instructions);
             }
         }
 
@@ -243,12 +268,12 @@ namespace LightResize.Tests
         {
             using (MemoryStream ms = new MemoryStream(8000))
             {
-                var job = new ResizeJob(format: format, jpegQuality: jpegQuality ?? 90)
+                var instructions = new Instructions
                 {
                     Format = format,
                     JpegQuality = jpegQuality ?? 90,
                 };
-                job.Build(GetBitmapStream(width, height), ms, JobOptions.LeaveTargetStreamOpen);
+                new ResizeJob().Build(GetBitmapStream(width, height), ms, JobOptions.LeaveTargetStreamOpen, instructions);
             }
         }
 

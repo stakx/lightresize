@@ -6,9 +6,9 @@ namespace LightResize.Tests
 {
     internal sealed class ResizeJobWithExplicitConsumer : ResizeJob
     {
-        public void Build(Stream source, JobOptions jobOptions, Action<Bitmap> consumer)
+        public void Build(Stream source, Action<Bitmap> consumer, JobOptions jobOptions, Instructions instructions)
         {
-            Build(source, (bitmap, _) => consumer?.Invoke(bitmap), jobOptions);
+            Build(source, (bitmap, _) => consumer?.Invoke(bitmap), jobOptions, instructions);
         }
     }
 }
