@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
@@ -39,7 +40,13 @@ namespace LightResize
         /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
         public static void Build(string sourcePath, string destinationPath, bool createDestinationDirectory, Instructions instructions)
         {
-            var sourceOptions = sourcePath == destinationPath ? StreamOptions.BufferInMemory : default(StreamOptions);
+            if (sourcePath == null)
+            {
+                throw new ArgumentNullException(nameof(sourcePath));
+            }
+
+            var sourceOptions = sourcePath == destinationPath ? StreamOptions.BufferInMemory
+                                                              : StreamOptions.Close;
             Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), sourceOptions, destinationPath, createDestinationDirectory, instructions);
         }
 
@@ -60,7 +67,14 @@ namespace LightResize
         /// <param name="destinationOptions">Specifies what should happen with the <paramref name="destination"/>> stream after processing.</param>
         /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
         public static void Build(string sourcePath, Stream destination, StreamOptions destinationOptions, Instructions instructions)
-            => Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), StreamOptions.Close, destination, destinationOptions, instructions);
+        {
+            if (sourcePath == null)
+            {
+                throw new ArgumentNullException(nameof(sourcePath));
+            }
+
+            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), StreamOptions.Close, destination, destinationOptions, instructions);
+        }
 
         /// <summary>
         /// Performs the image resize operation by reading from a file and writing to a <see cref="Stream"/>.
@@ -81,6 +95,11 @@ namespace LightResize
         /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
         public static void Build(Stream source, StreamOptions sourceOptions, string destinationPath, bool createDestinationDirectory, Instructions instructions)
         {
+            if (destinationPath == null)
+            {
+                throw new ArgumentNullException(nameof(destinationPath));
+            }
+
             if (createDestinationDirectory)
             {
                 string dirName = Path.GetDirectoryName(destinationPath);
@@ -145,6 +164,16 @@ namespace LightResize
         /// </remarks>
         public static void Build(Stream source, StreamOptions sourceOptions, Stream destination, StreamOptions destinationOptions, Instructions instructions)
         {
+            if (destination == null)
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
+
+            if ((destinationOptions & ~StreamOptions.LeaveOpen) != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(destinationOptions));
+            }
+
             Build(
                 source,
                 sourceOptions,
@@ -205,6 +234,23 @@ namespace LightResize
         /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
         private static void Build(Stream source, StreamOptions sourceOptions, Action<Bitmap> consumer, Instructions instructions)
         {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+
+            if ((sourceOptions & ~(StreamOptions.BufferInMemory | StreamOptions.LeaveOpen | StreamOptions.Rewind)) != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(sourceOptions));
+            }
+
+            Debug.Assert(consumer != null, nameof(consumer) + " must not be null.");
+
+            if (instructions == null)
+            {
+                throw new ArgumentNullException(nameof(instructions));
+            }
+
             var leaveSourceStreamOpen = (sourceOptions & StreamOptions.LeaveOpen) != 0;
 
             var bufferSource = (sourceOptions & StreamOptions.BufferInMemory) != 0;
@@ -307,19 +353,13 @@ namespace LightResize
 
             copyRect = originalRect;
 
-            /* Normalize */
-
+            // Width should have already been validated
             var width = instructions.Width;
-            if (width.HasValue && width < 1)
-            {
-                width = null;
-            }
+            Debug.Assert(width == null || width > 0, "There is an unexpected code path for setting " + nameof(Instructions) + "." + nameof(Instructions.Width) + " to a non-null and non-positive value.");
 
+            // Height should have already been validated
             var height = instructions.Height;
-            if (height.HasValue && height < 1)
-            {
-                height = null;
-            }
+            Debug.Assert(height == null || height > 0, "There is an unexpected code path for setting " + nameof(Instructions) + "." + nameof(Instructions.Height) + " to a non-null and non-positive value.");
 
             if (width.HasValue || height.HasValue)
             {

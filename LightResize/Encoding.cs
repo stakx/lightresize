@@ -18,6 +18,7 @@
  */
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -56,15 +57,8 @@ namespace LightResize
         /// <param name="quality">A number between 0 and 100. Defaults to 90 if passed a negative number. Numbers over 100 are truncated to 100. 90 is a *very* good setting.</param>
         public static void SaveJpeg(Image b, Stream target, int quality)
         {
-            // Validate quality
-            if (quality < 0)
-            {
-                quality = 90; // 90 is a very good default to stick with.
-            }
-            else if (quality > 100)
-            {
-                quality = 100;
-            }
+            // JPEG compression quality should have already been validated.
+            Debug.Assert(quality >= 0 && quality <= 100, "There is an unexpected code path for setting " + nameof(Instructions) + "." + nameof(Instructions.JpegQuality) + " to a value outside the range of [0..100].");
 
             // http://msdn.microsoft.com/en-us/library/ms533844(VS.85).aspx
             // Prepare parameter for encoder

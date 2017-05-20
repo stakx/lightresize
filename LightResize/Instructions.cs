@@ -17,6 +17,7 @@
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
+using System;
 using System.Drawing;
 
 namespace LightResize
@@ -26,35 +27,114 @@ namespace LightResize
     /// </summary>
     public sealed class Instructions
     {
+        private OutputFormat format = OutputFormat.Jpeg;
+        private int? height;
+        private int jpegQuality = 90;
+        private FitMode mode = FitMode.Max;
+        private ScaleMode scale = ScaleMode.DownscaleOnly;
+        private int? width;
+
         /// <summary>
         /// Gets or sets the width constraint.
         /// </summary>
-        public int? Width { get; set; }
+        public int? Width
+        {
+            get => width;
+            set
+            {
+                if (value < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), nameof(Width) + " must be null or a positive number.");
+                }
+
+                width = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the height constraint.
         /// </summary>
-        public int? Height { get; set; }
+        public int? Height
+        {
+            get => height;
+            set
+            {
+                if (value < 1)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), nameof(Height) + " must be null or a positive number.");
+                }
+
+                height = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the constraint mode. Defaults to <see cref="FitMode.Max"/>.
         /// </summary>
-        public FitMode Mode { get; set; } = FitMode.Max;
+        public FitMode Mode
+        {
+            get => mode;
+            set
+            {
+                if (value < FitMode.Max || value > FitMode.Stretch)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                mode = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets whether upscaling is permitted. Defaults to <see cref="ScaleMode.DownscaleOnly"/>.
         /// </summary>
-        public ScaleMode Scale { get; set; } = ScaleMode.DownscaleOnly;
+        public ScaleMode Scale
+        {
+            get => scale;
+            set
+            {
+                if (value < ScaleMode.DownscaleOnly || value > ScaleMode.UpscaleCanvas)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                scale = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the encoding format to use when writing the resized image to the destination stream. Defaults to <see cref="OutputFormat.Jpeg"/>.
         /// </summary>
-        public OutputFormat Format { get; set; } = OutputFormat.Jpeg;
+        public OutputFormat Format
+        {
+            get => format;
+            set
+            {
+                if (value < OutputFormat.Jpeg || value > OutputFormat.Png)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                format = value;
+            }
+        }
 
         /// <summary>
-        /// Gets or sets the JPEG encoding quality to use. 90 is the best value and the default. Seriously.
+        /// Gets or sets the JPEG encoding quality to use. Must be a value between 0 and 100 (inclusive). 90 is the best value and the default. Seriously.
         /// </summary>
-        public int JpegQuality { get; set; } = 90;
+        public int JpegQuality
+        {
+            get => jpegQuality;
+            set
+            {
+                if (value < 0 || value > 100)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+
+                jpegQuality = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the background color to apply. Defaults to <see cref="Color.Transparent"/>. If the output format (<see cref="Format"/>) is <see cref="OutputFormat.Jpeg"/> (which does not support transparency), <see cref="Color.White"/> will be used instead of <see cref="Color.Transparent"/>.

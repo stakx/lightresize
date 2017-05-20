@@ -15,6 +15,36 @@ namespace LightResize.Tests
     public class ImageBuilderTests
     {
         [Test]
+        public void Build_ThrowsArgumentNullException_WhenSourceNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImageBuilder.Build((Stream)null, Stream.Null, new Instructions()));
+        }
+
+        [Test]
+        public void Build_ThrowsArgumentNullException_WhenSourcePathNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImageBuilder.Build((string)null, Stream.Null, new Instructions()));
+        }
+
+        [Test]
+        public void Build_ThrowsArgumentNullException_WhenDestinationNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImageBuilder.Build(Stream.Null, (Stream)null, new Instructions()));
+        }
+
+        [Test]
+        public void Build_ThrowsArgumentNullException_WhenDestinationPathNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImageBuilder.Build(Stream.Null, (string)null, new Instructions()));
+        }
+
+        [Test]
+        public void Build_ThrowsArgumentNullException_WhenInstructionsNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => ImageBuilder.Build(Stream.Null, Stream.Null, (Instructions)null));
+        }
+
+        [Test]
         [TestCase(Close)]
         [TestCase(BufferInMemory)]
         [TestCase(BufferInMemory | LeaveOpen)]
@@ -77,7 +107,6 @@ namespace LightResize.Tests
 
         [Test]
         [TestCase(Close)]
-        [TestCase(BufferInMemory)]
         public void Build_ClosesTargetStream_WhenNotAskedToLeaveItOpen(StreamOptions destinationOptions)
         {
             using (var _ = GetBitmapStream(100, 100))
@@ -86,6 +115,20 @@ namespace LightResize.Tests
                 var instructions = new Instructions { Width = 50 };
                 ImageBuilder.Build(_, destination, destinationOptions, instructions);
                 Assert.False(destination.CanRead);
+            }
+        }
+
+        [Test]
+        [TestCase(BufferInMemory)]
+        [TestCase(Rewind)]
+        [TestCase(BufferInMemory | Rewind)]
+        public void Build_ThrowsArgumentException_WhenGivenDestinationOption(StreamOptions destinationOptions)
+        {
+            using (var _ = GetBitmapStream(100, 100))
+            using (var __ = Stream.Null)
+            {
+                var ___ = new Instructions();
+                Assert.Throws<ArgumentOutOfRangeException>(() => ImageBuilder.Build(_, __, destinationOptions, ___));
             }
         }
 
@@ -238,7 +281,7 @@ namespace LightResize.Tests
         [Test]
         [TestCase(50, 50, OutputFormat.Jpeg, 100)]
         [TestCase(1, 1, OutputFormat.Jpeg, 100)]
-        [TestCase(50, 50, OutputFormat.Jpeg, -300)]
+        [TestCase(50, 50, OutputFormat.Jpeg, 0)]
         [TestCase(50, 50, OutputFormat.Png)]
         public void EncodeImage(int width, int height, OutputFormat format, int? jpegQuality = null)
         {
