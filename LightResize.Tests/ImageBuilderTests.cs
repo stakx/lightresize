@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Web;
 using NUnit.Framework;
+
+using static LightResize.StreamOptions;
+
+[assembly: SuppressMessage("StyleCop.CSharp.NamingRules", "SA1312:Variable names must begin with lower-case letter", Justification = "We'll be using a variable named `_` for things that we don't care about.", Scope = "type", Target = "~T:LightResize.Tests.ImageBuilderTests")]
 
 namespace LightResize.Tests
 {
@@ -11,148 +15,134 @@ namespace LightResize.Tests
     public class ImageBuilderTests
     {
         [Test]
-        [TestCase(default(JobOptions))]
-        [TestCase(JobOptions.BufferEntireSourceStream)]
-        [TestCase(JobOptions.BufferEntireSourceStream | JobOptions.LeaveSourceStreamOpen)]
-        [TestCase(JobOptions.LeaveSourceStreamOpen)]
-        [TestCase(JobOptions.LeaveSourceStreamOpen | JobOptions.RewindSourceStream)]
-        public void Build_Succeeds_EvenWhenSourceStreamPositionNotAt0(JobOptions jobOptions)
+        [TestCase(Close)]
+        [TestCase(BufferInMemory)]
+        [TestCase(BufferInMemory | LeaveOpen)]
+        [TestCase(LeaveOpen)]
+        [TestCase(Rewind)]
+        public void Build_Succeeds_EvenWhenSourceStreamPositionNotAt0(StreamOptions sourceOptions)
         {
             TestDelegate action = () =>
             {
-                using (var sourceStream = GetBitmapStream(100, 100))
-                using (var targetStream = new MemoryStream())
+                using (var source = GetBitmapStream(100, 100))
+                using (var _ = Stream.Null)
                 {
-                    sourceStream.Seek(17, SeekOrigin.Begin);
+                    source.Seek(17, SeekOrigin.Begin);
                     var instructions = new Instructions { Width = 50 };
-                    ImageBuilder.Build(sourceStream, targetStream, jobOptions, instructions);
+                    ImageBuilder.Build(source, sourceOptions, _, instructions);
                 }
             };
             Assert.DoesNotThrow(action);
         }
 
         [Test]
-        [TestCase(JobOptions.LeaveSourceStreamOpen)]
-        [TestCase(JobOptions.RewindSourceStream)]
-        [TestCase(JobOptions.LeaveSourceStreamOpen | JobOptions.RewindSourceStream)]
-        public void Build_LeavesSourceStreamOpen_WhenAskedTo(JobOptions jobOptions)
+        [TestCase(LeaveOpen)]
+        [TestCase(Rewind)]
+        public void Build_LeavesSourceStreamOpen_WhenAskedTo(StreamOptions sourceOptions)
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var source = GetBitmapStream(100, 100))
+            using (var _ = Stream.Null)
             {
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(sourceStream, targetStream, jobOptions, instructions);
-                Assert.True(sourceStream.CanRead);
+                ImageBuilder.Build(source, sourceOptions, _, instructions);
+                Assert.True(source.CanRead);
             }
         }
 
         [Test]
-        [TestCase((JobOptions)0)]
-        [TestCase(JobOptions.BufferEntireSourceStream)]
-        [TestCase(JobOptions.CreateParentDirectory)]
-        [TestCase(JobOptions.LeaveTargetStreamOpen)]
-        [TestCase(JobOptions.PreserveTargetBitmap)]
-        public void Build_ClosesSourceStream_WhenNotAskedToLeaveItOpen(JobOptions jobOptions)
+        [TestCase(Close)]
+        [TestCase(BufferInMemory)]
+        public void Build_ClosesSourceStream_WhenNotAskedToLeaveItOpen(StreamOptions sourceOptions)
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var source = GetBitmapStream(100, 100))
+            using (var _ = Stream.Null)
             {
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(sourceStream, targetStream, jobOptions, instructions);
-                Assert.False(sourceStream.CanRead);
+                ImageBuilder.Build(source, sourceOptions, _, instructions);
+                Assert.False(source.CanRead);
             }
         }
 
         [Test]
-        [TestCase(JobOptions.LeaveTargetStreamOpen)]
-        public void Build_LeavesTargetStreamOpen_WhenAskedTo(JobOptions jobOptions)
+        public void Build_LeavesTargetStreamOpen_WhenAskedTo()
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var _ = GetBitmapStream(100, 100))
+            using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(sourceStream, targetStream, jobOptions, instructions);
-                Assert.True(targetStream.CanRead);
+                ImageBuilder.Build(_, destination, LeaveOpen, instructions);
+                Assert.True(destination.CanRead);
             }
         }
 
         [Test]
-        [TestCase((JobOptions)0)]
-        [TestCase(JobOptions.BufferEntireSourceStream)]
-        [TestCase(JobOptions.CreateParentDirectory)]
-        [TestCase(JobOptions.LeaveSourceStreamOpen)]
-        [TestCase(JobOptions.PreserveTargetBitmap)]
-        [TestCase(JobOptions.RewindSourceStream)]
-        public void Build_ClosesTargetStream_WhenNotAskedToLeaveItOpen(JobOptions jobOptions)
+        [TestCase(Close)]
+        [TestCase(BufferInMemory)]
+        public void Build_ClosesTargetStream_WhenNotAskedToLeaveItOpen(StreamOptions destinationOptions)
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var _ = GetBitmapStream(100, 100))
+            using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(sourceStream, targetStream, jobOptions, instructions);
-                Assert.False(targetStream.CanRead);
+                ImageBuilder.Build(_, destination, destinationOptions, instructions);
+                Assert.False(destination.CanRead);
             }
         }
 
         [Test]
-        [TestCase(JobOptions.RewindSourceStream)]
-        [TestCase(JobOptions.BufferEntireSourceStream | JobOptions.RewindSourceStream)]
-        public void Build_RewindsSourceStream_WhenAskedTo(JobOptions jobOptions)
+        public void Build_RewindsSourceStream_WhenAskedTo()
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var source = GetBitmapStream(100, 100))
+            using (var _ = Stream.Null)
             {
-                sourceStream.Seek(1, SeekOrigin.Begin);
-                var originalPosition = sourceStream.Position;
+                source.Seek(1, SeekOrigin.Begin);
+                var originalPosition = source.Position;
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(sourceStream, targetStream, jobOptions, instructions);
-                Assume.That(sourceStream.CanSeek);
-                Assert.AreEqual(originalPosition, sourceStream.Position);
+                ImageBuilder.Build(source, Rewind, _, instructions);
+                Assume.That(source.CanSeek);
+                Assert.AreEqual(originalPosition, source.Position);
             }
         }
 
         [Test]
-        [TestCase((JobOptions)0)]
-        [TestCase(JobOptions.BufferEntireSourceStream)]
-        [TestCase(JobOptions.CreateParentDirectory)]
-        [TestCase(JobOptions.LeaveSourceStreamOpen)]
-        [TestCase(JobOptions.LeaveTargetStreamOpen)]
-        [TestCase(JobOptions.PreserveTargetBitmap)]
-        public void Build_DoesNotRewindSourceStream_WhenNotAskedTo(JobOptions jobOptions)
+        [TestCase(Close)]
+        [TestCase(BufferInMemory)]
+        [TestCase(LeaveOpen)]
+        public void Build_DoesNotRewindSourceStream_WhenNotAskedTo(StreamOptions sourceOptions)
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var source = GetBitmapStream(100, 100))
+            using (var _ = Stream.Null)
             {
-                sourceStream.Seek(1, SeekOrigin.Begin);
-                var originalPosition = sourceStream.Position;
+                source.Seek(1, SeekOrigin.Begin);
+                var originalPosition = source.Position;
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(sourceStream, targetStream, jobOptions | JobOptions.LeaveSourceStreamOpen, instructions);
-                Assume.That(sourceStream.CanSeek);
-                Assert.AreNotEqual(originalPosition, sourceStream.Position);
+                ImageBuilder.Build(source, sourceOptions | LeaveOpen, _, instructions);
+                Assume.That(source.CanSeek);
+                Assert.AreNotEqual(originalPosition, source.Position);
             }
         }
 
         [Test]
         public void Build_CreatesTargetDirectory_WhenAskedTo()
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
+            using (var source = GetBitmapStream(100, 100))
             using (var targetStream = new MemoryStream())
             {
-                sourceStream.Seek(1, SeekOrigin.Begin);
-                var originalPosition = sourceStream.Position;
-                var parentDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-                Assume.That(!Directory.Exists(parentDirectory));
-                var targetPath = Path.Combine(parentDirectory, "test.jpg");
+                source.Seek(1, SeekOrigin.Begin);
+                var originalPosition = source.Position;
+                var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+                Assume.That(!Directory.Exists(directory));
+                var destinationPath = Path.Combine(directory, "test.jpg");
                 try
                 {
                     var instructions = new Instructions { Width = 50 };
-                    ImageBuilder.Build(sourceStream, targetPath, JobOptions.CreateParentDirectory, instructions);
-                    Assert.True(Directory.Exists(parentDirectory));
+                    ImageBuilder.Build(source, destinationPath, true, instructions);
+                    Assert.True(Directory.Exists(directory));
                 }
                 finally
                 {
-                    File.Delete(targetPath);
-                    Directory.Delete(parentDirectory, false);
+                    File.Delete(destinationPath);
+                    Directory.Delete(directory, false);
                 }
             }
         }
@@ -162,16 +152,15 @@ namespace LightResize.Tests
         {
             TestDelegate action = () =>
             {
-                using (var sourceStream = GetBitmapStream(100, 100))
-                using (var targetStream = new MemoryStream())
+                using (var source = GetBitmapStream(100, 100))
                 {
-                    sourceStream.Seek(1, SeekOrigin.Begin);
-                    var originalPosition = sourceStream.Position;
-                    var parentDirectory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
-                    Assume.That(!Directory.Exists(parentDirectory));
-                    var targetPath = Path.Combine(parentDirectory, "test.jpg");
+                    source.Seek(1, SeekOrigin.Begin);
+                    var originalPosition = source.Position;
+                    var directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+                    Assume.That(!Directory.Exists(directory));
+                    var destinationPath = Path.Combine(directory, "test.jpg");
                     var instructions = new Instructions { Width = 50 };
-                    ImageBuilder.Build(sourceStream, targetPath, default(JobOptions), instructions);
+                    ImageBuilder.Build(source, destinationPath, instructions);
                 }
             };
             Assert.Throws<DirectoryNotFoundException>(action);
@@ -187,11 +176,7 @@ namespace LightResize.Tests
             using (var targetStream = new MemoryStream())
             {
                 var instructions = new Instructions { Mode = mode, Width = 12, Height = 34 };
-                ImageBuilder.Build(
-                    sourceStream,
-                    targetStream,
-                    JobOptions.LeaveTargetStreamOpen,
-                    instructions);
+                ImageBuilder.Build(sourceStream, targetStream, LeaveOpen, instructions);
                 using (var output = new Bitmap(targetStream))
                 {
                     Assert.AreEqual(output.Width, 12);
@@ -206,12 +191,8 @@ namespace LightResize.Tests
             using (var sourceStream = GetBitmapStream(100, 66))
             using (var targetStream = new MemoryStream())
             {
-                var instructions = new Instructions { Mode = FitMode.Max, Width = 12, Height = 34 };
-                ImageBuilder.Build(
-                    sourceStream,
-                    targetStream,
-                    JobOptions.LeaveTargetStreamOpen,
-                    instructions);
+                var instructions = new Instructions { Width = 12, Height = 34 };
+                ImageBuilder.Build(sourceStream, targetStream, LeaveOpen, instructions);
                 using (var output = new Bitmap(targetStream))
                 {
                     Assert.AreEqual(output.Width, 12);
@@ -223,16 +204,12 @@ namespace LightResize.Tests
         [Test]
         public void Build_ProducesBitmapNoLargerThanOriginal_GivenScaleModeDown()
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var source = GetBitmapStream(100, 100))
+            using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Scale = ScaleMode.DownscaleOnly, Width = 200, Height = 200 };
-                ImageBuilder.Build(
-                    sourceStream,
-                    targetStream,
-                    JobOptions.LeaveTargetStreamOpen,
-                    instructions);
-                using (var output = new Bitmap(targetStream))
+                ImageBuilder.Build(source, destination, LeaveOpen, instructions);
+                using (var output = new Bitmap(destination))
                 {
                     Assert.AreEqual(output.Width, 100);
                     Assert.AreEqual(output.Height, 100);
@@ -245,16 +222,12 @@ namespace LightResize.Tests
         [TestCase(ScaleMode.UpscaleCanvas)]
         public void Build_ProducesBitmapLargerThanOriginal_GivenScaleMode(ScaleMode scale)
         {
-            using (var sourceStream = GetBitmapStream(100, 100))
-            using (var targetStream = new MemoryStream())
+            using (var source = GetBitmapStream(100, 100))
+            using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Scale = scale, Width = 200, Height = 200 };
-                ImageBuilder.Build(
-                    sourceStream,
-                    targetStream,
-                    JobOptions.LeaveTargetStreamOpen,
-                    instructions);
-                using (var output = new Bitmap(targetStream))
+                ImageBuilder.Build(source, destination, LeaveOpen, instructions);
+                using (var output = new Bitmap(destination))
                 {
                     Assert.AreEqual(output.Width, 200);
                     Assert.AreEqual(output.Height, 200);
@@ -269,14 +242,11 @@ namespace LightResize.Tests
         [TestCase(50, 50, OutputFormat.Png)]
         public void EncodeImage(int width, int height, OutputFormat format, int? jpegQuality = null)
         {
-            using (MemoryStream ms = new MemoryStream(8000))
+            using (var source = GetBitmapStream(width, height))
+            using (var _ = Stream.Null)
             {
-                var instructions = new Instructions
-                {
-                    Format = format,
-                    JpegQuality = jpegQuality ?? 90,
-                };
-                ImageBuilder.Build(GetBitmapStream(width, height), ms, JobOptions.LeaveTargetStreamOpen, instructions);
+                var instructions = new Instructions { Format = format, JpegQuality = jpegQuality ?? 90 };
+                ImageBuilder.Build(source, _, instructions);
             }
         }
 

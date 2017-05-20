@@ -31,52 +31,57 @@ namespace LightResize
     public static class ImageBuilder
     {
         /// <summary>
-        /// Allows callers to handle the encoding/usage phase.
+        /// Performs the image resize operation by reading from a file and writing to a file.
         /// </summary>
-        /// <param name="bitmap">The resized bitmap image.</param>
-        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
-        protected delegate void BitmapConsumer(Bitmap bitmap, JobOptions options);
+        /// <param name="sourcePath">The path of the file to read from.</param>
+        /// <param name="destinationPath">The path of the file to write to.</param>
+        /// <param name="createDestinationDirectory">Specifies whether to create the output directory or not if it does not exist.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(string sourcePath, string destinationPath, bool createDestinationDirectory, Instructions instructions)
+        {
+            var sourceOptions = sourcePath == destinationPath ? StreamOptions.BufferInMemory : default(StreamOptions);
+            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), sourceOptions, destinationPath, createDestinationDirectory, instructions);
+        }
 
         /// <summary>
         /// Performs the image resize operation by reading from a file and writing to a file.
         /// </summary>
         /// <param name="sourcePath">The path of the file to read from.</param>
-        /// <param name="destinationPath">The path of the file to write to.</param>
-        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        public static void Build(string sourcePath, string destinationPath, JobOptions options, Instructions instructions)
-        {
-            if (sourcePath == destinationPath)
-            {
-                options = options | JobOptions.BufferEntireSourceStream;
-            }
-
-            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destinationPath, options, instructions);
-        }
+        /// <param name="destinationPath">The path of the file to write to. The output directory must exist for processing to succeed.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(string sourcePath, string destinationPath, Instructions instructions)
+            => Build(sourcePath, destinationPath, false, instructions);
 
         /// <summary>
         /// Performs the image resize operation by reading from a file and writing to a <see cref="Stream"/>.
         /// </summary>
         /// <param name="sourcePath">The path of the file to read from.</param>
         /// <param name="destination">The stream to write to.</param>
-        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        public static void Build(string sourcePath, Stream destination, JobOptions options, Instructions instructions)
-        {
-            Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), destination, options, instructions);
-        }
+        /// <param name="destinationOptions">Specifies what should happen with the <paramref name="destination"/>> stream after processing.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(string sourcePath, Stream destination, StreamOptions destinationOptions, Instructions instructions)
+            => Build(File.Open(sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read), StreamOptions.Close, destination, destinationOptions, instructions);
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a file and writing to a <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="sourcePath">The path of the file to read from.</param>
+        /// <param name="destination">The stream to write to. This stream will be closed.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(string sourcePath, Stream destination, Instructions instructions)
+            => Build(sourcePath, destination, StreamOptions.Close, instructions);
 
         /// <summary>
         /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a file.
         /// </summary>
         /// <param name="source">The stream to read from.</param>
+        /// <param name="sourceOptions">Specifies what should happen with the <paramref name="source"/> stream after processing.</param>
         /// <param name="destinationPath">The path of the file to write to.</param>
-        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        public static void Build(Stream source, string destinationPath, JobOptions options, Instructions instructions)
+        /// <param name="createDestinationDirectory">Specifies whether to create the output directory or not if it does not exist.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, StreamOptions sourceOptions, string destinationPath, bool createDestinationDirectory, Instructions instructions)
         {
-            var createParents = (options & JobOptions.CreateParentDirectory) != 0;
-            if (createParents)
+            if (createDestinationDirectory)
             {
                 string dirName = Path.GetDirectoryName(destinationPath);
                 if (!Directory.Exists(dirName))
@@ -87,32 +92,63 @@ namespace LightResize
 
             Build(
                 source,
-                (Bitmap b, JobOptions option) =>
+                sourceOptions,
+                (Bitmap b) =>
                 {
                     using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write))
                     {
                         Encode(b, fs, instructions);
                     }
                 },
-                options,
                 instructions);
         }
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a file.
+        /// </summary>
+        /// <param name="source">The stream to read from.</param>
+        /// <param name="sourceOptions">Specifies what should happen with the <paramref name="source"/> stream after processing.</param>
+        /// <param name="destinationPath">The path of the file to write to. The output directory must exist for processing to succeed.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, StreamOptions sourceOptions, string destinationPath, Instructions instructions)
+            => Build(source, sourceOptions, destinationPath, false, instructions);
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a file.
+        /// </summary>
+        /// <param name="source">The stream to read from. The stream will be closed.</param>
+        /// <param name="destinationPath">The path of the file to write to.</param>
+        /// <param name="createDestinationDirectory">Specifies whether to create the output directory or not if it does not exist.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, string destinationPath, bool createDestinationDirectory, Instructions instructions)
+            => Build(source, StreamOptions.Close, destinationPath, createDestinationDirectory, instructions);
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a file.
+        /// </summary>
+        /// <param name="source">The stream to read from. The stream will be closed.</param>
+        /// <param name="destinationPath">The path of the file to write to. The output directory must exist for processing to succeed.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, string destinationPath, Instructions instructions)
+            => Build(source, StreamOptions.Close, destinationPath, false, instructions);
 
         /// <summary>
         /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a <see cref="Stream"/>.
         /// </summary>
         /// <param name="source">The stream to read from.</param>
+        /// <param name="sourceOptions">Specifies what should happen with the <paramref name="source"/> stream after processing.</param>
         /// <param name="destination">The stream to write to.</param>
-        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
+        /// <param name="destinationOptions">Specifies what should happen with the <paramref name="destination"/> stream after processing.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
         /// <remarks>
         /// Ensure that the first stream you open will be safely closed if the second stream fails to open! This means a <c>using()</c> or <c>try</c>/<c>finally</c> clause.
         /// </remarks>
-        public static void Build(Stream source, Stream destination, JobOptions options, Instructions instructions)
+        public static void Build(Stream source, StreamOptions sourceOptions, Stream destination, StreamOptions destinationOptions, Instructions instructions)
         {
             Build(
                 source,
-                (Bitmap b, JobOptions opts) =>
+                sourceOptions,
+                (Bitmap b) =>
                 {
                     try
                     {
@@ -122,31 +158,57 @@ namespace LightResize
                     finally
                     {
                         // Ensure target stream is disposed if requested
-                        if ((opts & JobOptions.LeaveTargetStreamOpen) == 0)
+                        if ((destinationOptions & StreamOptions.LeaveOpen) == 0)
                         {
                             destination.Dispose();
                         }
                     }
                 },
-                options,
                 instructions);
         }
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="source">The stream to read from.</param>
+        /// <param name="sourceOptions">Specifies what should happen with the <paramref name="source"/> stream after processing.</param>
+        /// <param name="destination">The stream to write to. This stream will be closed.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, StreamOptions sourceOptions, Stream destination, Instructions instructions)
+            => Build(source, sourceOptions, destination, StreamOptions.Close, instructions);
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="source">The stream to read from. This stream will be closed.</param>
+        /// <param name="destination">The stream to write to.</param>
+        /// <param name="destinationOptions">Specifies what should happen with the <paramref name="destination"/> stream after processing.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, Stream destination, StreamOptions destinationOptions, Instructions instructions)
+            => Build(source, StreamOptions.Close, destination, destinationOptions, instructions);
+
+        /// <summary>
+        /// Performs the image resize operation by reading from a <see cref="Stream"/> and writing to a <see cref="Stream"/>.
+        /// </summary>
+        /// <param name="source">The stream to read from. The stream will be closed.</param>
+        /// <param name="destination">The stream to write to. The stream will be closed.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        public static void Build(Stream source, Stream destination, Instructions instructions)
+            => Build(source, StreamOptions.Close, destination, StreamOptions.Close, instructions);
 
         /// <summary>
         /// Loads the bitmap from stream, processes, and renders, sending the result <see cref="Bitmap"/> to the <paramref name="consumer"/> callback for encoding or usage.
         /// </summary>
         /// <param name="source">The <see cref="Stream"/> to read from.</param>
-        /// <param name="consumer">The <see cref="BitmapConsumer"/> that will receive the resized <see cref="Bitmap"/> for further processing (e.g. writing to a destination).</param>
-        /// <param name="options">Specifies how <see cref="ImageBuilder"/> should handle I/O (e.g. whether to buffer, rewind, and/or dispose the source stream, and whether to dispose the target stream).</param>
-        /// <param name="instructions">Specifies how to resize the source image.</param>
-        private static void Build(Stream source, BitmapConsumer consumer, JobOptions options, Instructions instructions)
+        /// <param name="sourceOptions">Specifies what should happen with the <paramref name="source"/> stream after processing.</param>
+        /// <param name="consumer">The callback that will receive the resized <see cref="Bitmap"/> for further processing (e.g. writing to a destination). The passed-in bitmap will be disposed immediately after callback invocation.</param>
+        /// <param name="instructions">Specifies how the source bitmap should be resized.</param>
+        private static void Build(Stream source, StreamOptions sourceOptions, Action<Bitmap> consumer, Instructions instructions)
         {
-            var leaveSourceStreamOpen = (options & JobOptions.LeaveSourceStreamOpen) != 0 ||
-                                 (options & JobOptions.RewindSourceStream) != 0;
+            var leaveSourceStreamOpen = (sourceOptions & StreamOptions.LeaveOpen) != 0;
 
-            var bufferSource = (options & JobOptions.BufferEntireSourceStream) != 0;
-            var originalPosition = (options & JobOptions.RewindSourceStream) != 0 ? source.Position : -1;
-            var preserveTemp = (options & JobOptions.PreserveTargetBitmap) != 0;
+            var bufferSource = (sourceOptions & StreamOptions.BufferInMemory) != 0;
+            var originalPosition = (sourceOptions & StreamOptions.Rewind) == StreamOptions.Rewind ? source.Position : -1;
 
             Bitmap destBitmap = null;
             try
@@ -216,12 +278,12 @@ namespace LightResize
                 }
 
                 // Fire callback to write to disk or use Bitmap instance directly
-                consumer(destBitmap, options);
+                consumer(destBitmap);
             }
             finally
             {
                 // Temporary bitmap must be disposed
-                if (!preserveTemp && destBitmap != null)
+                if (destBitmap != null)
                 {
                     destBitmap.Dispose();
                     destBitmap = null;
