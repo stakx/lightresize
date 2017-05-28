@@ -14,10 +14,22 @@
     <PackageTags>imaging image-resizing bitmap wpf windows-forms system-drawing gdi+</PackageTags>
     <Product>LightResize</Product>
     <Description>Embeddable image resizing library for console, WPF, &amp; WinForms usage. Not suitable for use in ASP.NET applications.</Description>
+
+    <AppDesignerFolder>Properties</AppDesignerFolder>
   </PropertyGroup>
 
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\LightResize.xml</DocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\GlobalSuppressions.cs" Link="Properties\GlobalSuppressions.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.0">
+      <PrivateAssets>All</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
 
 </Project>

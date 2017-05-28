@@ -9,7 +9,13 @@
     <Product>LightResize</Product>
     <Description></Description>
     <Copyright>Copyright © 2012 Imazen, 2017 stakx</Copyright>
+
+    <AppDesignerFolder>Properties</AppDesignerFolder>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\GlobalSuppressions.cs" Link="Properties\GlobalSuppressions.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- this marks this project as one containing NUnit tests; see http://stackoverflow.com/a/22917902/240733. -->
@@ -26,14 +32,11 @@
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.6.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.7.0" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\LightResize\LightResize.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="System.Web" />
   </ItemGroup>
 
 </Project>
