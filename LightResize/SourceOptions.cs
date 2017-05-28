@@ -22,18 +22,18 @@ using System;
 namespace LightResize
 {
     /// <summary>
-    /// Instructs <see cref="ImageBuilder"/> how to handle a stream passed to it.
+    /// Instructs <see cref="ImageBuilder"/> how to handle a source (input) stream passed to it.
     /// </summary>
     [Flags]
-    public enum StreamOptions
+    public enum SourceOptions
     {
         /// <summary>
-        /// The stream will be closed after it has been used. This is the default.
+        /// In the absence of any other options, the stream will be used and then closed. This is the default.
         /// </summary>
-        Close = 0b000,
+        None = 0b000,
 
         /// <summary>
-        /// The stream will be buffered entirely in memory. Applies only for source (input) streams.
+        /// The stream will be buffered entirely in memory.
         /// </summary>
         BufferInMemory = 0b001,
 
@@ -43,7 +43,7 @@ namespace LightResize
         LeaveOpen = 0b010,
 
         /// <summary>
-        /// The stream will be rewound to the initial position. This implies <see cref="LeaveOpen"/>.
+        /// The stream will be rewound to the initial position if it is seekable. This option includes <see cref="LeaveOpen"/>.
         /// </summary>
         Rewind = LeaveOpen | 0b100,
     }

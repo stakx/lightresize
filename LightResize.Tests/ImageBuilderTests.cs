@@ -5,7 +5,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using NUnit.Framework;
 
-using static LightResize.StreamOptions;
+using static LightResize.SourceOptions;
 
 [assembly: SuppressMessage("StyleCop.CSharp.NamingRules", "SA1312:Variable names must begin with lower-case letter", Justification = "We'll be using a variable named `_` for things that we don't care about.", Scope = "type", Target = "~T:LightResize.Tests.ImageBuilderTests")]
 
@@ -45,12 +45,12 @@ namespace LightResize.Tests
         }
 
         [Test]
-        [TestCase(Close)]
+        [TestCase(None)]
         [TestCase(BufferInMemory)]
         [TestCase(BufferInMemory | LeaveOpen)]
         [TestCase(LeaveOpen)]
         [TestCase(Rewind)]
-        public void Build_Succeeds_EvenWhenSourceStreamPositionNotAt0(StreamOptions sourceOptions)
+        public void Build_Succeeds_EvenWhenSourceStreamPositionNotAt0(SourceOptions sourceOptions)
         {
             TestDelegate action = () =>
             {
@@ -68,7 +68,7 @@ namespace LightResize.Tests
         [Test]
         [TestCase(LeaveOpen)]
         [TestCase(Rewind)]
-        public void Build_LeavesSourceStreamOpen_WhenAskedTo(StreamOptions sourceOptions)
+        public void Build_LeavesSourceStreamOpen_WhenAskedTo(SourceOptions sourceOptions)
         {
             using (var source = GetBitmapStream(100, 100))
             using (var _ = Stream.Null)
@@ -80,9 +80,9 @@ namespace LightResize.Tests
         }
 
         [Test]
-        [TestCase(Close)]
+        [TestCase(None)]
         [TestCase(BufferInMemory)]
-        public void Build_ClosesSourceStream_WhenNotAskedToLeaveItOpen(StreamOptions sourceOptions)
+        public void Build_ClosesSourceStream_WhenNotAskedToLeaveItOpen(SourceOptions sourceOptions)
         {
             using (var source = GetBitmapStream(100, 100))
             using (var _ = Stream.Null)
@@ -100,35 +100,20 @@ namespace LightResize.Tests
             using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(_, destination, LeaveOpen, instructions);
+                ImageBuilder.Build(_, destination, true, instructions);
                 Assert.True(destination.CanRead);
             }
         }
 
         [Test]
-        [TestCase(Close)]
-        public void Build_ClosesTargetStream_WhenNotAskedToLeaveItOpen(StreamOptions destinationOptions)
+        public void Build_ClosesTargetStream_WhenNotAskedToLeaveItOpen()
         {
             using (var _ = GetBitmapStream(100, 100))
             using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Width = 50 };
-                ImageBuilder.Build(_, destination, destinationOptions, instructions);
+                ImageBuilder.Build(_, destination, instructions);
                 Assert.False(destination.CanRead);
-            }
-        }
-
-        [Test]
-        [TestCase(BufferInMemory)]
-        [TestCase(Rewind)]
-        [TestCase(BufferInMemory | Rewind)]
-        public void Build_ThrowsArgumentException_WhenGivenDestinationOption(StreamOptions destinationOptions)
-        {
-            using (var _ = GetBitmapStream(100, 100))
-            using (var __ = Stream.Null)
-            {
-                var ___ = new Instructions();
-                Assert.Throws<ArgumentOutOfRangeException>(() => ImageBuilder.Build(_, __, destinationOptions, ___));
             }
         }
 
@@ -148,10 +133,10 @@ namespace LightResize.Tests
         }
 
         [Test]
-        [TestCase(Close)]
+        [TestCase(None)]
         [TestCase(BufferInMemory)]
         [TestCase(LeaveOpen)]
-        public void Build_DoesNotRewindSourceStream_WhenNotAskedTo(StreamOptions sourceOptions)
+        public void Build_DoesNotRewindSourceStream_WhenNotAskedTo(SourceOptions sourceOptions)
         {
             using (var source = GetBitmapStream(100, 100))
             using (var _ = Stream.Null)
@@ -219,7 +204,7 @@ namespace LightResize.Tests
             using (var targetStream = new MemoryStream())
             {
                 var instructions = new Instructions { Mode = mode, Width = 12, Height = 34 };
-                ImageBuilder.Build(sourceStream, targetStream, LeaveOpen, instructions);
+                ImageBuilder.Build(sourceStream, targetStream, true, instructions);
                 using (var output = new Bitmap(targetStream))
                 {
                     Assert.AreEqual(output.Width, 12);
@@ -235,7 +220,7 @@ namespace LightResize.Tests
             using (var targetStream = new MemoryStream())
             {
                 var instructions = new Instructions { Width = 12, Height = 34 };
-                ImageBuilder.Build(sourceStream, targetStream, LeaveOpen, instructions);
+                ImageBuilder.Build(sourceStream, targetStream, true, instructions);
                 using (var output = new Bitmap(targetStream))
                 {
                     Assert.AreEqual(output.Width, 12);
@@ -251,7 +236,7 @@ namespace LightResize.Tests
             using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Scale = ScaleMode.DownscaleOnly, Width = 200, Height = 200 };
-                ImageBuilder.Build(source, destination, LeaveOpen, instructions);
+                ImageBuilder.Build(source, destination, true, instructions);
                 using (var output = new Bitmap(destination))
                 {
                     Assert.AreEqual(output.Width, 100);
@@ -269,7 +254,7 @@ namespace LightResize.Tests
             using (var destination = new MemoryStream())
             {
                 var instructions = new Instructions { Scale = scale, Width = 200, Height = 200 };
-                ImageBuilder.Build(source, destination, LeaveOpen, instructions);
+                ImageBuilder.Build(source, destination, true, instructions);
                 using (var output = new Bitmap(destination))
                 {
                     Assert.AreEqual(output.Width, 200);
