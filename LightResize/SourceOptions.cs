@@ -22,40 +22,29 @@ using System;
 namespace LightResize
 {
     /// <summary>
-    /// Instructs <see cref="ResizeJob"/> how to handle I/O (e.g. whether to buffer, dispose, and/or rewind the source stream, or whether to dispose the destination stream).
+    /// Instructs <see cref="ImageBuilder"/> how to handle a source (input) stream passed to it.
     /// </summary>
     [Flags]
-    public enum JobOptions
+    public enum SourceOptions
     {
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to leave the source stream open even after it is no longer needed for the job.
+        /// In the absence of any other options, the stream will be used and then closed. This is the default.
         /// </summary>
-        LeaveSourceStreamOpen = 1,
+        None = 0b000,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to rewind the source stream to its original position after it has been used. (This is useful when reusing a stream or <c>HttpFileUpload</c>.)
-        /// Implies <see cref="LeaveSourceStreamOpen"/>.
+        /// The stream will be buffered entirely in memory.
         /// </summary>
-        RewindSourceStream = 2,
+        BufferInMemory = 0b001,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to leave the target stream open after it is finished writing. Make sure you close it externally!
+        /// The stream will be left open after it has been used.
         /// </summary>
-        LeaveTargetStreamOpen = 4,
+        LeaveOpen = 0b010,
 
         /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to preserve the target bitmap. (This will cause a memory leak unless disposed externally).
+        /// The stream will be rewound to the initial position if it is seekable. This option includes <see cref="LeaveOpen"/>.
         /// </summary>
-        PreserveTargetBitmap = 8,
-
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to create any needed parent folder levels when a file path is specified as the destination.
-        /// </summary>
-        CreateParentDirectory = 16,
-
-        /// <summary>
-        /// Instructs <see cref="ResizeJob"/> to copy the source stream into a memory buffer so that it can be closed earlier. (This is required if you are writing to the same file that you are reading from.)
-        /// </summary>
-        BufferEntireSourceStream = 32,
+        Rewind = LeaveOpen | 0b100,
     }
 }

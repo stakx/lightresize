@@ -25,22 +25,22 @@ namespace LightResize
     public enum FitMode
     {
         /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered maximum values. The resulting image may be smaller to maintain its aspect ratio. The image may also be smaller if the source image is smaller.
+        /// <see cref="Instructions.Width"/> and <see cref="Instructions.Height"/> are considered maximum values. The resulting image may be smaller to maintain its aspect ratio. The image may also be smaller if the source image is smaller.
         /// </summary>
         Max,
 
         /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. Padding is used if there is an aspect ratio difference.
+        /// <see cref="Instructions.Width"/> and <see cref="Instructions.Height"/> are considered exact values. Padding is used if there is an aspect ratio difference.
         /// </summary>
         Pad,
 
         /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. Cropping is used if there is an aspect ratio difference.
+        /// <see cref="Instructions.Width"/> and <see cref="Instructions.Height"/> are considered exact values. Cropping is used if there is an aspect ratio difference.
         /// </summary>
         Crop,
 
         /// <summary>
-        /// <see cref="ResizeJob.Width"/> and <see cref="ResizeJob.Height"/> are considered exact values. If there is an aspect ratio difference, the image is stretched.
+        /// <see cref="Instructions.Width"/> and <see cref="Instructions.Height"/> are considered exact values. If there is an aspect ratio difference, the image is stretched.
         /// </summary>
         Stretch,
     }
