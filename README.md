@@ -8,7 +8,7 @@ An embeddable image resizing library for non-ASP.NET apps, extracted from [Image
 
 **28 May 2017**: LightResize is now [available as a NuGet package](https://www.nuget.org/packages/LightResize/).
 
-**8 May 2017**: Wondering why you're at [stakx/lightresize](https://github.com/stakx/lightresize) when you followed a link to [Imazen/lightresize](https://github.com/Imazen/lightresize)? Don't worry, this is not by mistake: [@nathanaeljones](https://github.com/nathanaeljones), the original author of LightResize, has handed maintenance of his project over to me, so it's got a new home and GitHub automatically brought you here. My aim is to keep this small library useful and easily available to those who want to use it.
+**8 May 2017**: Wondering why you're at [stakx/lightresize](https://github.com/stakx/lightresize) when you followed a link to [imazen/lightresize](https://github.com/imazen/lightresize)? Don't worry, this is not by mistake: [@lilith](https://github.com/lilith), the original author of LightResize, has handed maintenance of her project over to me, so it's got a new home and GitHub automatically brought you here. My aim is to keep this small library useful and easily available to those who want to use it.
 
 ## Basic usage ##
 
